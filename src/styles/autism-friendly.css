@@ -1,0 +1,53 @@
+/* Autism-Friendly Global Styles */
+:root {
+    /* Calming color palette - greens and browns */
+    --primary-green: #2d5a2d;
+    --light-green: #90c695;
+    --soft-brown: #8b7355;
+    --light-brown: #d2b48c;
+    --background-beige: #f5f5dc;
+    --white: #ffffff;
+    --text-dark: #333333;
+    
+    /* NO YELLOWS - can be overstimulating */
+    
+    /* Spacing and sizing */
+    --spacing-sm: 10px;
+    --spacing-md: 20px;
+    --spacing-lg: 30px;
+    --border-radius: 10px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-beige);
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+button {
+    background-color: var(--primary-green);
+    color: var(--white);
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--border-radius);
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: var(--light-green);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+}
