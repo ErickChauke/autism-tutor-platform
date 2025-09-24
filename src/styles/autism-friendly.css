@@ -1,21 +1,17 @@
-/* Autism-Friendly Global Styles */
 :root {
-    /* Calming color palette - greens and browns */
-    --primary-green: #2d5a2d;
-    --light-green: #90c695;
-    --soft-brown: #8b7355;
-    --light-brown: #d2b48c;
-    --background-beige: #f5f5dc;
-    --white: #ffffff;
-    --text-dark: #333333;
-    
-    /* NO YELLOWS - can be overstimulating */
-    
-    /* Spacing and sizing */
+    --primary-blue: #4A90E2;
+    --light-blue: #7FB3D5;
+    --accent-teal: #52C4B8;
+    --soft-green: #81C784;
+    --cream: #FFF8E7;
+    --soft-gray: #F5F5F5;
+    --white: #FFFFFF;
+    --text-dark: #2C3E50;
+    --text-light: #7F8C8D;
     --spacing-sm: 10px;
     --spacing-md: 20px;
     --spacing-lg: 30px;
-    --border-radius: 10px;
+    --border-radius: 12px;
 }
 
 * {
@@ -25,29 +21,26 @@
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: var(--background-beige);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--cream) 0%, var(--soft-gray) 100%);
     color: var(--text-dark);
     line-height: 1.6;
+    min-height: 100vh;
 }
 
 button {
-    background-color: var(--primary-green);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 100%);
     color: var(--white);
     border: none;
     padding: 12px 24px;
     border-radius: var(--border-radius);
     font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 button:hover {
-    background-color: var(--light-green);
-}
-
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: var(--spacing-md);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }

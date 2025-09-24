@@ -4,52 +4,67 @@
 }
 
 .mainscreen-container h2 {
-    color: var(--primary-green);
+    color: var(--primary-blue);
     margin-bottom: var(--spacing-lg);
-    font-size: 1.8rem;
+    font-size: 2rem;
+    font-weight: 600;
 }
 
 .modes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: var(--spacing-md);
     margin-bottom: var(--spacing-lg);
 }
 
 .mode-card {
-    background-color: var(--white);
-    border: 2px solid var(--light-green);
-    padding: var(--spacing-md);
+    background: var(--white);
+    border: 2px solid transparent;
+    padding: var(--spacing-lg);
     text-align: left;
     transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
 }
 
 .mode-card:hover {
-    border-color: var(--primary-green);
-    transform: translateY(-2px);
+    border-color: var(--primary-blue);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
 }
 
 .mode-card.selected {
-    background-color: var(--light-green);
-    border-color: var(--primary-green);
+    background: linear-gradient(135deg, var(--light-blue) 0%, var(--accent-teal) 100%);
+    color: var(--white);
+    border-color: var(--primary-blue);
 }
 
 .mode-card h3 {
-    color: var(--primary-green);
+    color: var(--primary-blue);
     margin-bottom: var(--spacing-sm);
+    font-size: 1.3rem;
+}
+
+.mode-card.selected h3 {
+    color: var(--white);
 }
 
 .mode-card p {
-    color: var(--text-dark);
-    font-size: 0.9rem;
+    color: var(--text-light);
+    font-size: 0.95rem;
+}
+
+.mode-card.selected p {
+    color: var(--white);
+    opacity: 0.95;
 }
 
 .start-button {
-    background-color: var(--soft-brown);
-    font-size: 1.1rem;
-    padding: 15px 40px;
+    background: linear-gradient(135deg, var(--soft-green) 0%, var(--accent-teal) 100%);
+    font-size: 1.2rem;
+    padding: 16px 48px;
+    margin-top: var(--spacing-md);
 }
 
 .start-button:hover {
-    background-color: var(--light-brown);
+    transform: translateY(-3px);
 }
