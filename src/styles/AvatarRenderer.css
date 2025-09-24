@@ -1,0 +1,20 @@
+.avatar-renderer {
+    text-align: center;
+    margin: var(--spacing-md) auto;
+}
+
+.avatar-canvas {
+    width: 400px;
+    height: 400px;
+    margin: 0 auto;
+    border-radius: var(--border-radius);
+    background: var(--soft-gray);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.avatar-status {
+    margin-top: var(--spacing-md);
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--primary-blue);
+}
