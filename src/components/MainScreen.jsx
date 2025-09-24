@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import '../styles/MainScreen.css';
 
-export default function MainScreen() {
+export default function MainScreen({ onStartTracking }) {
     const [selectedMode, setSelectedMode] = useState('');
-
     const modes = [
         { id: 'assessment', name: 'Assessment Mode', description: 'Measure your natural eye contact patterns' },
         { id: 'prompting', name: 'Prompting Mode', description: 'Visual cues guide your attention' },
@@ -27,7 +26,9 @@ export default function MainScreen() {
                 ))}
             </div>
             {selectedMode && (
-                <button className="start-button">Start {selectedMode} Mode</button>
+                <button className="start-button" onClick={onStartTracking}>
+                    Start {selectedMode} Mode
+                </button>
             )}
         </div>
     );
