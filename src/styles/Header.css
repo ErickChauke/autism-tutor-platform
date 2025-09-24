@@ -1,14 +1,22 @@
-/* Header Component Styles - Autism-Friendly Design */
-.Header-container {
-    background-color: #f5f5dc; /* Soft beige background */
-    border-radius: 10px;
-    padding: 20px;
-    margin: 10px;
+.header {
+    background-color: var(--primary-green);
+    color: var(--white);
+    padding: var(--spacing-md);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.Header-container h2 {
-    color: #2d5a2d; /* Calming green */
-    font-family: 'Arial', sans-serif;
-    margin-bottom: 15px;
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
 }
