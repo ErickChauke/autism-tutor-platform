@@ -3,11 +3,18 @@ import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 import '../styles/FaceTracker.css';
 
-export default function FaceTracker() {
+export default function FaceTracker({ mode }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [isTracking, setIsTracking] = useState(false);
     const [faceDetected, setFaceDetected] = useState(false);
+
+    const modeNames = {
+        assessment: 'Assessment Mode',
+        prompting: 'Prompting Mode',
+        prt: 'PRT Mode',
+        research: 'Research Mode'
+    };
 
     useEffect(() => {
         if (!isTracking) return;
@@ -53,7 +60,6 @@ export default function FaceTracker() {
                 setFaceDetected(true);
                 const landmarks = results.multiFaceLandmarks[0];
                 
-                // Draw eye landmarks
                 drawLandmarks(ctx, canvas, [landmarks[33], landmarks[133]], '#4A90E2');
                 drawLandmarks(ctx, canvas, [landmarks[362], landmarks[263]], '#52C4B8');
             } else {
@@ -75,7 +81,10 @@ export default function FaceTracker() {
 
     return (
         <div className="facetracker-container">
-            <h2>Face Tracking Test</h2>
+            <div className="mode-indicator">
+                <span className="mode-badge">{modeNames[mode]}</span>
+            </div>
+            <h2>Face Tracking Active</h2>
             <div className="video-container">
                 <video ref={videoRef} style={{ display: 'none' }} />
                 <canvas ref={canvasRef} />

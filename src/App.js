@@ -7,12 +7,32 @@ import './App.css';
 
 function App() {
     const [currentScreen, setCurrentScreen] = useState('main');
+    const [selectedMode, setSelectedMode] = useState('');
+
+    const handleStartMode = (mode) => {
+        setSelectedMode(mode);
+        setCurrentScreen('tracker');
+    };
+
+    const handleBackToMain = () => {
+        setCurrentScreen('main');
+        setSelectedMode('');
+    };
 
     return (
         <div className="App">
-            <Header />
-            {currentScreen === 'main' && <MainScreen onStartTracking={() => setCurrentScreen('tracker')} />}
-            {currentScreen === 'tracker' && <FaceTracker />}
+            <Header 
+                showBackButton={currentScreen !== 'main'} 
+                onBackClick={handleBackToMain}
+            />
+            
+            {currentScreen === 'main' && (
+                <MainScreen onStartMode={handleStartMode} />
+            )}
+            
+            {currentScreen === 'tracker' && (
+                <FaceTracker mode={selectedMode} onBack={handleBackToMain} />
+            )}
         </div>
     );
 }
