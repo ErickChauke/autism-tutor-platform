@@ -19,10 +19,20 @@
 
 .tracking-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 400px 1fr;
     gap: var(--spacing-lg);
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    align-items: start;
+}
+
+.tracking-section {
+    width: 100%;
+}
+
+.avatar-section {
+    width: 100%;
+    min-height: 550px;
 }
 
 .tracking-section h3,
@@ -30,6 +40,7 @@
     color: var(--primary-blue);
     margin-bottom: var(--spacing-md);
     text-align: center;
+    font-size: 1.3rem;
 }
 
 .video-container {
@@ -56,7 +67,7 @@
     color: var(--text-dark);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .tracking-layout {
         grid-template-columns: 1fr;
     }
