@@ -10,6 +10,11 @@ export default function FaceTracker({ mode }) {
     const [isTracking, setIsTracking] = useState(false);
     const [faceDetected, setFaceDetected] = useState(false);
     const [eyeContact, setEyeContact] = useState(false);
+    
+    // Mode-specific state
+    const [score, setScore] = useState(0);
+    const [eyeContactCount, setEyeContactCount] = useState(0);
+    const [startTime, setStartTime] = useState(null);
 
     const modeNames = {
         assessment: 'Assessment Mode',
@@ -18,8 +23,18 @@ export default function FaceTracker({ mode }) {
         research: 'Research Mode'
     };
 
+    const modeDescriptions = {
+        assessment: 'Silent baseline measurement',
+        prompting: 'Visual cues guide attention',
+        prt: 'Positive reinforcement training',
+        research: 'Controlled data collection'
+    };
+
     useEffect(() => {
         if (!isTracking) return;
+
+        setStartTime(Date.now());
+        let lastEyeContact = false;
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
@@ -59,17 +74,39 @@ export default function FaceTracker({ mode }) {
                 const lookingForward = Math.abs(eyeCenterX - nose.x) < 0.05;
                 
                 setEyeContact(lookingForward);
+
+                // Track new eye contact events
+                if (lookingForward && !lastEyeContact) {
+                    setEyeContactCount(prev => prev + 1);
+                    if (mode === 'prt') {
+                        setScore(prev => prev + 10);
+                    }
+                }
+                lastEyeContact = lookingForward;
                 
-                const color = lookingForward ? '#00ff00' : '#4A90E2';
+                // Mode-specific landmark colors
+                let color, size = 8;
+                
+                if (mode === 'assessment') {
+                    color = '#cccccc';
+                    size = 4;
+                } else if (mode === 'prt') {
+                    color = lookingForward ? '#FFD700' : '#4A90E2';
+                    size = lookingForward ? 12 : 8;
+                } else {
+                    color = lookingForward ? '#00ff00' : '#4A90E2';
+                }
+
                 [leftEye, rightEye].forEach(landmark => {
                     ctx.fillStyle = color;
                     ctx.beginPath();
-                    ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 8, 0, 2 * Math.PI);
+                    ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, size, 0, 2 * Math.PI);
                     ctx.fill();
                 });
             } else {
                 setFaceDetected(false);
                 setEyeContact(false);
+                lastEyeContact = false;
             }
             ctx.restore();
         });
@@ -90,12 +127,18 @@ export default function FaceTracker({ mode }) {
                 cameraInstance.stop();
             }
         };
-    }, [isTracking]);
+    }, [isTracking, mode]);
+
+    const getDuration = () => {
+        if (!startTime) return 0;
+        return Math.floor((Date.now() - startTime) / 1000);
+    };
 
     return (
         <div className="facetracker-container">
             <div className="mode-indicator">
-                <span className="mode-badge">{modeNames[mode]}</span>
+                <span className={`mode-badge ${mode}`}>{modeNames[mode]}</span>
+                <p className="mode-description">{modeDescriptions[mode]}</p>
             </div>
             
             <div className="tracking-layout">
@@ -112,12 +155,35 @@ export default function FaceTracker({ mode }) {
                         <p className="status">
                             {isTracking ? (faceDetected ? (eyeContact ? '✓ Eye Contact!' : '○ Face Detected') : '✗ No Face') : 'Click to start'}
                         </p>
+
+                        {/* PRT Mode: Show score */}
+                        {isTracking && mode === 'prt' && (
+                            <div className="prt-stats">
+                                <div className="stat">
+                                    <span className="stat-label">Score</span>
+                                    <span className="stat-value">{score}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Assessment/Research: Show metrics */}
+                        {isTracking && (mode === 'assessment' || mode === 'research') && (
+                            <div className="session-stats">
+                                <p>Eye contact events: {eyeContactCount}</p>
+                                <p>Duration: {getDuration()}s</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="avatar-section">
                     <h3>Training Avatar</h3>
-                    <ReadyPlayerMeAvatar eyeContact={eyeContact} />
+                    <ReadyPlayerMeAvatar 
+                        eyeContact={mode === 'assessment' ? false : eyeContact} 
+                    />
+                    {mode === 'assessment' && (
+                        <p className="mode-note">Avatar stays neutral</p>
+                    )}
                 </div>
             </div>
         </div>
