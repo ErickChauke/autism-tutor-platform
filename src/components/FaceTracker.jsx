@@ -1,8 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
-//import ReadyPlayerMeAvatar from './ReadyPlayerMeAvatar';
-import ReadyPlayerMeAvatar from './MorphTargetAvatar';
+import MorphTargetAvatar from './MorphTargetAvatar';
 import '../styles/FaceTracker.css';
 
 export default function FaceTracker({ mode }) {
@@ -12,7 +11,6 @@ export default function FaceTracker({ mode }) {
     const [faceDetected, setFaceDetected] = useState(false);
     const [eyeContact, setEyeContact] = useState(false);
     
-    // Mode-specific state
     const [score, setScore] = useState(0);
     const [eyeContactCount, setEyeContactCount] = useState(0);
     const [startTime, setStartTime] = useState(null);
@@ -76,7 +74,6 @@ export default function FaceTracker({ mode }) {
                 
                 setEyeContact(lookingForward);
 
-                // Track new eye contact events
                 if (lookingForward && !lastEyeContact) {
                     setEyeContactCount(prev => prev + 1);
                     if (mode === 'prt') {
@@ -85,7 +82,6 @@ export default function FaceTracker({ mode }) {
                 }
                 lastEyeContact = lookingForward;
                 
-                // Mode-specific landmark colors
                 let color, size = 8;
                 
                 if (mode === 'assessment') {
@@ -157,7 +153,6 @@ export default function FaceTracker({ mode }) {
                             {isTracking ? (faceDetected ? (eyeContact ? '✓ Eye Contact!' : '○ Face Detected') : '✗ No Face') : 'Click to start'}
                         </p>
 
-                        {/* PRT Mode: Show score */}
                         {isTracking && mode === 'prt' && (
                             <div className="prt-stats">
                                 <div className="stat">
@@ -167,7 +162,6 @@ export default function FaceTracker({ mode }) {
                             </div>
                         )}
 
-                        {/* Assessment/Research: Show metrics */}
                         {isTracking && (mode === 'assessment' || mode === 'research') && (
                             <div className="session-stats">
                                 <p>Eye contact events: {eyeContactCount}</p>
@@ -179,9 +173,7 @@ export default function FaceTracker({ mode }) {
 
                 <div className="avatar-section">
                     <h3>Training Avatar</h3>
-                    <ReadyPlayerMeAvatar 
-                        eyeContact={mode === 'assessment' ? false : eyeContact} 
-                    />
+                    <MorphTargetAvatar eyeContact={eyeContact} mode={mode} />
                     {mode === 'assessment' && (
                         <p className="mode-note">Avatar stays neutral</p>
                     )}
