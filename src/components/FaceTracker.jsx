@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
-import ReadyPlayerMeAvatar from './ReadyPlayerMeAvatar';
+//import ReadyPlayerMeAvatar from './ReadyPlayerMeAvatar';
+import ReadyPlayerMeAvatar from './MorphTargetAvatar';
 import '../styles/FaceTracker.css';
 
 export default function FaceTracker({ mode }) {
