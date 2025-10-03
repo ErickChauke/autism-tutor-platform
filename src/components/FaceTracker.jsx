@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 import MorphTargetAvatar from './MorphTargetAvatar';
+import EducationEngine from './EducationEngine';
 import '../styles/FaceTracker.css';
 
 export default function FaceTracker({ mode }) {
@@ -136,7 +137,14 @@ export default function FaceTracker({ mode }) {
             <div className="mode-indicator">
                 <span className={`mode-badge ${mode}`}>{modeNames[mode]}</span>
                 <p className="mode-description">{modeDescriptions[mode]}</p>
-            </div>
+            
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
+                </div>
+            )}
+        </div>
             
             <div className="tracking-layout">
                 <div className="tracking-section">
@@ -144,7 +152,14 @@ export default function FaceTracker({ mode }) {
                     <div className="video-container">
                         <video ref={videoRef} style={{ display: 'none' }} />
                         <canvas ref={canvasRef} />
-                    </div>
+                    
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
+                </div>
+            )}
+        </div>
                     <div className="controls">
                         <button onClick={() => setIsTracking(!isTracking)}>
                             {isTracking ? 'Stop Tracking' : 'Start Tracking'}
@@ -158,18 +173,53 @@ export default function FaceTracker({ mode }) {
                                 <div className="stat">
                                     <span className="stat-label">Score</span>
                                     <span className="stat-value">{score}</span>
-                                </div>
-                            </div>
+                                
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
+                </div>
+            )}
+        </div>
+                            
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
+                </div>
+            )}
+        </div>
                         )}
 
                         {isTracking && (mode === 'assessment' || mode === 'research') && (
                             <div className="session-stats">
                                 <p>Eye contact events: {eyeContactCount}</p>
                                 <p>Duration: {getDuration()}s</p>
-                            </div>
-                        )}
-                    </div>
+                            
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
                 </div>
+            )}
+        </div>
+                        )}
+                    
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
+                </div>
+            )}
+        </div>
+                
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
+                </div>
+            )}
+        </div>
 
                 <div className="avatar-section">
                     <h3>Training Avatar</h3>
@@ -177,8 +227,29 @@ export default function FaceTracker({ mode }) {
                     {mode === 'assessment' && (
                         <p className="mode-note">Avatar stays neutral</p>
                     )}
+                
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
                 </div>
-            </div>
+            )}
+        </div>
+            
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
+                </div>
+            )}
+        </div>
+        
+            {isTracking && (
+                <div className="education-section">
+                    <h3>Educational Content</h3>
+                    <EducationEngine eyeContactScore={score} mode={mode} />
+                </div>
+            )}
         </div>
     );
 }

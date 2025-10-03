@@ -1,0 +1,67 @@
+.education-engine {
+    padding: 20px;
+    background: #f0f8f0;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.content-display {
+    min-height: 100px;
+    padding: 20px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.content {
+    font-size: 1.2em;
+    line-height: 1.6;
+    color: #2d5016;
+}
+
+.generating {
+    font-style: italic;
+    color: #6b8e23;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.controls button {
+    padding: 12px 24px;
+    background: #6b8e23;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.controls button:hover {
+    background: #556b2f;
+}
+
+.engagement-feedback {
+    margin-top: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+}
+
+.progress-bar {
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6b8e23, #9acd32);
+    transition: width 0.5s ease;
+}
