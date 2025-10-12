@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import OpenAI from 'openai';
+import { lipSyncController } from '../utils/lip-sync-controller';
+import { speechTimingEstimator } from '../utils/speech-timing-estimator';
 import '../styles/EducationEngine.css';
 
 const fallbackContent = {
@@ -47,7 +49,7 @@ export default function EducationEngine({
     const openaiRef = useRef(null);
     const lastScoreMilestone = useRef(0);
     
-    // Attention prompt state
+    // Speech state
     const speechSynthRef = useRef(window.speechSynthesis);
     const lastPromptTime = useRef(0);
     const lostFocusTime = useRef(null);
@@ -70,19 +72,28 @@ export default function EducationEngine({
         }
     }, []);
 
-    // VOICE FUNCTIONS - These work!
+    // VOICE FUNCTION WITH IMPROVED LIP SYNC
     const speakText = (text, options = {}) => {
         if (!speechSynthRef.current) return;
         
         // Cancel any ongoing speech
         speechSynthRef.current.cancel();
+        lipSyncController.stop();
+        speechTimingEstimator.stop();
         
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = options.rate || 0.9;
+        const rate = options.rate || 0.9;
+        utterance.rate = rate;
         utterance.pitch = options.pitch || 1.1;
         utterance.volume = options.volume || 0.9;
         
-        console.log('🔊 Speaking:', text);
+        // Start timing estimator for accurate pause detection
+        speechTimingEstimator.start(text, rate);
+        
+        // Start lip sync animation
+        lipSyncController.start(utterance);
+        
+        console.log('🔊 Speaking with improved lip sync:', text);
         speechSynthRef.current.speak(utterance);
     };
 
@@ -106,7 +117,6 @@ export default function EducationEngine({
 
         const now = Date.now();
         
-        // Don't prompt too frequently (10 seconds minimum)
         if (now - lastPromptTime.current < 10000) {
             console.log('⏭️ Skipping prompt (too soon)');
             return;
@@ -124,10 +134,9 @@ export default function EducationEngine({
         lastPromptTime.current = now;
     };
 
-    // ATTENTION TRACKING - Runs continuously
+    // ATTENTION TRACKING
     useEffect(() => {
         if (!faceDetected || mode === 'assessment' || mode === 'research') {
-            // Clear timers if face not detected or wrong mode
             if (promptTimer.current) {
                 clearTimeout(promptTimer.current);
                 promptTimer.current = null;
@@ -137,35 +146,28 @@ export default function EducationEngine({
 
         const now = Date.now();
 
-        // User just lost eye contact
         if (!hasEyeContact && lastEyeContact.current) {
             console.log('👁️ Lost eye contact - starting 4s timer');
             wasLookingAway.current = true;
             lostFocusTime.current = now;
             
-            // Clear any existing timer
             if (promptTimer.current) {
                 clearTimeout(promptTimer.current);
             }
             
-            // Set new timer for 4 seconds
             promptTimer.current = setTimeout(() => {
                 console.log('⏰ 4 seconds passed - prompting now!');
                 promptForAttention();
             }, 4000);
         }
-        
-        // User just regained eye contact
         else if (hasEyeContact && !lastEyeContact.current) {
             console.log('👁️ Regained eye contact!');
             
-            // Clear the prompt timer
             if (promptTimer.current) {
                 clearTimeout(promptTimer.current);
                 promptTimer.current = null;
             }
             
-            // Give encouragement if they were away long enough
             if (wasLookingAway.current && voiceRemindersEnabled) {
                 const timeAway = now - lostFocusTime.current;
                 if (timeAway > 4000) {
@@ -185,12 +187,13 @@ export default function EducationEngine({
         lastEyeContact.current = hasEyeContact;
     }, [hasEyeContact, faceDetected, voiceRemindersEnabled, mode]);
 
-    // Clean up timers
     useEffect(() => {
         return () => {
             if (promptTimer.current) {
                 clearTimeout(promptTimer.current);
             }
+            lipSyncController.destroy();
+            speechTimingEstimator.stop();
         };
     }, []);
 
@@ -250,7 +253,6 @@ export default function EducationEngine({
                 topic: topic
             }]);
             
-            // Speak the content if enabled
             if (speechEnabled) {
                 speakText(content, {
                     rate: 0.85,

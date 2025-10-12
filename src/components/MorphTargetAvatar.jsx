@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
+import { lipSyncController } from '../utils/lip-sync-controller';
+import { speechTimingEstimator } from '../utils/speech-timing-estimator';
 import '../styles/AvatarRenderer.css';
 
 function AvatarModel({ eyeContact, mode }) {
@@ -9,11 +11,13 @@ function AvatarModel({ eyeContact, mode }) {
     const modelRef = useRef();
     const [blinkState, setBlinkState] = useState(0);
     const [smileIntensity, setSmileIntensity] = useState(0);
+    const [mouthOpen, setMouthOpen] = useState(0);
     const lastEyeContactRef = useRef(false);
 
+    // Blinking animation
     useEffect(() => {
         const blinkInterval = setInterval(() => {
-            if (Math.random() > 0.8) {
+            if (Math.random() > 0.8 && !lipSyncController.getSpeaking()) {
                 setBlinkState(1);
                 setTimeout(() => setBlinkState(0), 150);
             }
@@ -22,7 +26,7 @@ function AvatarModel({ eyeContact, mode }) {
         return () => clearInterval(blinkInterval);
     }, []);
 
-    // FIX: Respond to eye contact changes
+    // Eye contact response
     useEffect(() => {
         if (eyeContact && !lastEyeContactRef.current) {
             if (mode === 'prt') {
@@ -42,25 +46,53 @@ function AvatarModel({ eyeContact, mode }) {
         lastEyeContactRef.current = eyeContact;
     }, [eyeContact, mode]);
 
-    useEffect(() => {
+    // Update morph targets every frame
+    useFrame(() => {
         if (!scene) return;
+
+        // Get current lip sync value
+        let currentMouthOpen = lipSyncController.getMouthOpen();
+        
+        // Use timing estimator to detect pauses
+        if (lipSyncController.getSpeaking()) {
+            const isActuallySpeaking = speechTimingEstimator.isSpeakingNow();
+            if (!isActuallySpeaking) {
+                // In a pause - close mouth
+                currentMouthOpen = 0;
+            }
+        }
+        
+        setMouthOpen(currentMouthOpen);
 
         scene.traverse((child) => {
             if (child.isMesh && child.morphTargetInfluences && child.morphTargetDictionary) {
                 const dict = child.morphTargetDictionary;
                 
+                // Smile
                 if (dict.mouthSmile !== undefined) {
                     const targetSmile = mode === 'assessment' ? 0 : smileIntensity;
                     child.morphTargetInfluences[dict.mouthSmile] = targetSmile;
                 }
 
+                // Eyes closed (blinking)
                 if (dict.eyesClosed !== undefined) {
                     child.morphTargetInfluences[dict.eyesClosed] = blinkState;
                 }
+
+                // Mouth open (lip sync with pauses)
+                if (dict.mouthOpen !== undefined) {
+                    child.morphTargetInfluences[dict.mouthOpen] = currentMouthOpen;
+                }
+                
+                // Jaw open (for wider mouth movements)
+                if (dict.jawOpen !== undefined) {
+                    child.morphTargetInfluences[dict.jawOpen] = currentMouthOpen * 0.5;
+                }
             }
         });
-    }, [scene, smileIntensity, blinkState, mode]);
+    });
 
+    // Subtle head animation
     useEffect(() => {
         if (modelRef.current) {
             let animationId;
@@ -89,6 +121,9 @@ function AvatarModel({ eyeContact, mode }) {
 }
 
 export default function MorphTargetAvatar({ eyeContact = false, mode = 'prompting' }) {
+    const isSpeaking = lipSyncController.getSpeaking();
+    const isActuallySpeaking = isSpeaking && speechTimingEstimator.isSpeakingNow();
+    
     return (
         <div className="avatar-renderer-large">
             <Canvas 
@@ -98,6 +133,7 @@ export default function MorphTargetAvatar({ eyeContact = false, mode = 'promptin
                     powerPreference: "low-power",
                     preserveDrawingBuffer: false
                 }}
+                frameloop="always"
             >
                 <ambientLight intensity={1.2} />
                 <directionalLight position={[5, 5, 5]} intensity={1} />
@@ -106,7 +142,9 @@ export default function MorphTargetAvatar({ eyeContact = false, mode = 'promptin
                 </Suspense>
             </Canvas>
             <p className="avatar-status-large">
-                {eyeContact ? 'Great eye contact!' : 'Look at me'}
+                {isActuallySpeaking ? '🗣️ Speaking...' : 
+                 isSpeaking ? '⏸️ Pause...' :
+                 eyeContact ? 'Great eye contact!' : 'Look at me'}
             </p>
         </div>
     );
