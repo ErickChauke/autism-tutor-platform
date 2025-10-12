@@ -8,6 +8,7 @@ import '../styles/FaceTracker.css';
 export default function FaceTracker({ mode }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    
     const [isTracking, setIsTracking] = useState(false);
     const [faceDetected, setFaceDetected] = useState(false);
     const [eyeContact, setEyeContact] = useState(false);
@@ -15,6 +16,7 @@ export default function FaceTracker({ mode }) {
     const [score, setScore] = useState(0);
     const [eyeContactCount, setEyeContactCount] = useState(0);
     const [startTime, setStartTime] = useState(null);
+    const [voiceRemindersEnabled, setVoiceRemindersEnabled] = useState(true);
 
     const modeNames = {
         assessment: 'Assessment Mode',
@@ -62,8 +64,11 @@ export default function FaceTracker({ mode }) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
+            let currentFaceDetected = false;
+            let currentEyeContact = false;
+
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-                setFaceDetected(true);
+                currentFaceDetected = true;
                 const landmarks = results.multiFaceLandmarks[0];
                 
                 const leftEye = landmarks[33];
@@ -71,17 +76,16 @@ export default function FaceTracker({ mode }) {
                 const nose = landmarks[1];
                 
                 const eyeCenterX = (leftEye.x + rightEye.x) / 2;
-                const lookingForward = Math.abs(eyeCenterX - nose.x) < 0.05;
-                
-                setEyeContact(lookingForward);
+                currentEyeContact = Math.abs(eyeCenterX - nose.x) < 0.05;
 
-                if (lookingForward && !lastEyeContact) {
+                if (currentEyeContact && !lastEyeContact) {
                     setEyeContactCount(prev => prev + 1);
                     if (mode === 'prt') {
                         setScore(prev => prev + 10);
                     }
                 }
-                lastEyeContact = lookingForward;
+                
+                lastEyeContact = currentEyeContact;
                 
                 let color, size = 8;
                 
@@ -89,10 +93,10 @@ export default function FaceTracker({ mode }) {
                     color = '#cccccc';
                     size = 4;
                 } else if (mode === 'prt') {
-                    color = lookingForward ? '#FFD700' : '#4A90E2';
-                    size = lookingForward ? 12 : 8;
+                    color = currentEyeContact ? '#FFD700' : '#4A90E2';
+                    size = currentEyeContact ? 12 : 8;
                 } else {
-                    color = lookingForward ? '#00ff00' : '#4A90E2';
+                    color = currentEyeContact ? '#00ff00' : '#4A90E2';
                 }
 
                 [leftEye, rightEye].forEach(landmark => {
@@ -102,10 +106,12 @@ export default function FaceTracker({ mode }) {
                     ctx.fill();
                 });
             } else {
-                setFaceDetected(false);
-                setEyeContact(false);
                 lastEyeContact = false;
             }
+            
+            setFaceDetected(currentFaceDetected);
+            setEyeContact(currentEyeContact);
+            
             ctx.restore();
         });
 
@@ -137,14 +143,7 @@ export default function FaceTracker({ mode }) {
             <div className="mode-indicator">
                 <span className={`mode-badge ${mode}`}>{modeNames[mode]}</span>
                 <p className="mode-description">{modeDescriptions[mode]}</p>
-            
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
-                </div>
-            )}
-        </div>
+            </div>
             
             <div className="tracking-layout">
                 <div className="tracking-section">
@@ -152,104 +151,98 @@ export default function FaceTracker({ mode }) {
                     <div className="video-container">
                         <video ref={videoRef} style={{ display: 'none' }} />
                         <canvas ref={canvasRef} />
+                    </div>
                     
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
-                </div>
-            )}
-        </div>
                     <div className="controls">
-                        <button onClick={() => setIsTracking(!isTracking)}>
-                            {isTracking ? 'Stop Tracking' : 'Start Tracking'}
+                        <button 
+                            onClick={() => setIsTracking(!isTracking)}
+                            className="main-control-button"
+                        >
+                            {isTracking ? '⏸️ Stop Tracking' : '▶️ Start Tracking'}
                         </button>
-                        <p className="status">
-                            {isTracking ? (faceDetected ? (eyeContact ? '✓ Eye Contact!' : '○ Face Detected') : '✗ No Face') : 'Click to start'}
-                        </p>
+                        
+                        <div className="status-display">
+                            {isTracking ? (
+                                faceDetected ? (
+                                    eyeContact ? '✓ Eye Contact!' : '○ Face Detected'
+                                ) : '✗ No Face Detected'
+                            ) : 'Click Start to begin'}
+                        </div>
+
+                        {/* Voice Reminders Toggle */}
+                        {(mode === 'prompting' || mode === 'prt') && isTracking && (
+                            <div className="prompt-toggle">
+                                <label>
+                                    <input 
+                                        type="checkbox"
+                                        checked={voiceRemindersEnabled}
+                                        onChange={(e) => setVoiceRemindersEnabled(e.target.checked)}
+                                    />
+                                    <span>Enable Voice Reminders</span>
+                                </label>
+                                <p className="prompt-info">
+                                    {voiceRemindersEnabled ? '🔊 Will remind you to look' : '🔇 Reminders off'}
+                                </p>
+                            </div>
+                        )}
 
                         {isTracking && mode === 'prt' && (
                             <div className="prt-stats">
                                 <div className="stat">
                                     <span className="stat-label">Score</span>
                                     <span className="stat-value">{score}</span>
-                                
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
-                </div>
-            )}
-        </div>
-                            
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
-                </div>
-            )}
-        </div>
+                                </div>
+                                <div className="stat">
+                                    <span className="stat-label">Eye Contact</span>
+                                    <span className="stat-value">{eyeContactCount}</span>
+                                </div>
+                            </div>
                         )}
 
                         {isTracking && (mode === 'assessment' || mode === 'research') && (
                             <div className="session-stats">
                                 <p>Eye contact events: {eyeContactCount}</p>
                                 <p>Duration: {getDuration()}s</p>
-                            
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
-                </div>
-            )}
-        </div>
+                            </div>
                         )}
-                    
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
+                    </div>
+
+                    {/* Education Engine - Pass eye contact state for voice reminders */}
+                    {(mode === 'prt' || mode === 'prompting') && isTracking && (
+                        <div className="education-section">
+                            {mode === 'prt' && <h3>📚 Learning Content</h3>}
+                            <EducationEngine 
+                                eyeContactScore={score} 
+                                mode={mode}
+                                hasEyeContact={eyeContact}
+                                faceDetected={faceDetected}
+                                voiceRemindersEnabled={voiceRemindersEnabled}
+                            />
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
-                
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
-                </div>
-            )}
-        </div>
 
                 <div className="avatar-section">
                     <h3>Training Avatar</h3>
                     <MorphTargetAvatar eyeContact={eyeContact} mode={mode} />
                     {mode === 'assessment' && (
-                        <p className="mode-note">Avatar stays neutral</p>
+                        <p className="mode-note">📊 Neutral observation mode</p>
                     )}
-                
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
+                    {mode === 'prompting' && (
+                        <p className="mode-note">
+                            👁️ Visual cues {voiceRemindersEnabled && isTracking ? '+ voice reminders 🔊' : ''}
+                        </p>
+                    )}
+                    {mode === 'prt' && (
+                        <p className="mode-note">
+                            🎉 Celebration mode {voiceRemindersEnabled && isTracking ? '+ voice reminders 🔊' : ''}
+                        </p>
+                    )}
+                    {mode === 'research' && (
+                        <p className="mode-note">🔬 Standardized testing</p>
+                    )}
                 </div>
-            )}
-        </div>
-            
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
-                </div>
-            )}
-        </div>
-        
-            {isTracking && (
-                <div className="education-section">
-                    <h3>Educational Content</h3>
-                    <EducationEngine eyeContactScore={score} mode={mode} />
-                </div>
-            )}
+            </div>
         </div>
     );
 }

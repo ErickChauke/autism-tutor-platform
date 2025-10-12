@@ -140,3 +140,106 @@
     margin-top: var(--spacing-md);
     color: var(--text-light);
 }
+
+/* Education Section Styling */
+.education-section {
+    margin-top: var(--spacing-lg);
+}
+
+.education-section h3 {
+    color: var(--primary-blue);
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+/* Attention Prompts Toggle */
+.prompt-toggle {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: var(--white);
+    border-radius: var(--border-radius);
+    text-align: left;
+}
+
+.prompt-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+}
+
+.prompt-toggle input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary-blue);
+}
+
+.prompt-toggle span {
+    font-weight: 500;
+}
+
+.prompt-info {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    text-align: center;
+}
+
+/* Enhanced Controls */
+.main-control-button {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.status-display {
+    background: var(--cream);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-sm);
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    border-left: 4px solid var(--primary-blue);
+}
+
+.prt-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.education-section h3 {
+    color: var(--primary-blue);
+    margin-bottom: var(--spacing-sm);
+    font-size: 1.1rem;
+}
+
+.speech-toggle {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--soft-gray);
+    border-radius: var(--border-radius);
+}
+
+.speech-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.milestone-info {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 8px;
+}
