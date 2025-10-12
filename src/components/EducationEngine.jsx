@@ -4,35 +4,28 @@ import { lipSyncController } from '../utils/lip-sync-controller';
 import { speechTimingEstimator } from '../utils/speech-timing-estimator';
 import '../styles/EducationEngine.css';
 
-const fallbackContent = {
-    education: {
-        animals: "Let's learn about animals. Did you know elephants are very smart? They can remember things for many years!",
-        space: "Space is amazing! Did you know the sun is a big ball of hot gas? It gives us light and warmth!",
-        colors: "Colors are everywhere! Red, blue, and yellow are primary colors. We can mix them to make other colors!",
-        numbers: "Let's count together! One, two, three, four, five! Numbers help us count things around us."
-    }
-};
-
 const ATTENTION_PROMPTS = [
     "Hey, look at me!",
     "Can you look at my eyes?",
     "I'm over here!",
     "Let's make eye contact!",
     "Look at me, please!",
-    "Can you see me?",
-    "I'm waiting for you to look!",
-    "Your eyes here, please!",
-    "Focus on my face!",
-    "Let me see your eyes!"
 ];
 
 const ENCOURAGEMENT = [
     "Great! You're back!",
     "Perfect! Thank you!",
     "Awesome! Good job!",
-    "Yes! That's it!",
-    "Well done!"
 ];
+
+const fallbackContent = {
+    education: {
+        animals: "Let's learn about animals. Did you know elephants are very smart?",
+        space: "Space is amazing! Did you know the sun is a star?",
+        colors: "Colors are everywhere! Red, blue, and yellow are primary colors.",
+        numbers: "Let's count together! One, two, three, four, five!"
+    }
+};
 
 export default function EducationEngine({ 
     eyeContactScore = 0, 
@@ -46,18 +39,19 @@ export default function EducationEngine({
     const [conversationHistory, setConversationHistory] = useState([]);
     const [useAI, setUseAI] = useState(false);
     const [speechEnabled, setSpeechEnabled] = useState(true);
+    
+    // Refs
     const openaiRef = useRef(null);
+    const speechSynthRef = useRef(window.speechSynthesis);
     const lastScoreMilestone = useRef(0);
     
-    // Speech state
-    const speechSynthRef = useRef(window.speechSynthesis);
+    // Simplified tracking - just track eye contact!
     const lastPromptTime = useRef(0);
-    const lostFocusTime = useRef(null);
-    const promptTimer = useRef(null);
+    const noEyeContactTimer = useRef(null);
     const usedPrompts = useRef([]);
-    const wasLookingAway = useRef(false);
-    const lastEyeContact = useRef(hasEyeContact);
+    const lastEyeContactValue = useRef(hasEyeContact);
 
+    // Initialize OpenAI
     useEffect(() => {
         if (process.env.REACT_APP_OPENAI_KEY) {
             openaiRef.current = new OpenAI({
@@ -65,159 +59,125 @@ export default function EducationEngine({
                 dangerouslyAllowBrowser: true
             });
             setUseAI(true);
-            console.log('✅ OpenAI API initialized');
+            console.log('✅ OpenAI initialized');
         } else {
-            console.log('ℹ️ No API key, using fallback content');
-            setUseAI(false);
+            console.log('ℹ️ Using fallback');
         }
     }, []);
 
-    // VOICE FUNCTION WITH IMPROVED LIP SYNC
-    const speakText = (text, options = {}) => {
-        if (!speechSynthRef.current) return;
+    // VOICE FUNCTION
+    const speakNow = (text, type = 'normal') => {
+        console.log(`🔊 Speaking (${type}):`, text);
         
-        // Cancel any ongoing speech
+        if (!text) return;
+        
+        // Cancel ongoing
         speechSynthRef.current.cancel();
         lipSyncController.stop();
         speechTimingEstimator.stop();
         
         const utterance = new SpeechSynthesisUtterance(text);
-        const rate = options.rate || 0.9;
-        utterance.rate = rate;
-        utterance.pitch = options.pitch || 1.1;
-        utterance.volume = options.volume || 0.9;
+        utterance.rate = 0.9;
+        utterance.pitch = 1.1;
+        utterance.volume = 1.0;
         
-        // Start timing estimator for accurate pause detection
-        speechTimingEstimator.start(text, rate);
+        utterance.onstart = () => console.log('  ✅ Started');
+        utterance.onend = () => console.log('  ✅ Ended');
+        utterance.onerror = (e) => console.error('  ❌ Error:', e);
         
-        // Start lip sync animation
+        speechTimingEstimator.start(text, 0.9);
         lipSyncController.start(utterance);
-        
-        console.log('🔊 Speaking with improved lip sync:', text);
         speechSynthRef.current.speak(utterance);
     };
 
-    // ATTENTION PROMPT FUNCTIONS
-    const getRandomPrompt = () => {
-        if (usedPrompts.current.length >= ATTENTION_PROMPTS.length) {
-            usedPrompts.current = [];
-        }
-        const available = ATTENTION_PROMPTS.filter(p => !usedPrompts.current.includes(p));
-        const selected = available[Math.floor(Math.random() * available.length)];
-        usedPrompts.current.push(selected);
-        return selected;
-    };
-
-    const getRandomEncouragement = () => {
-        return ENCOURAGEMENT[Math.floor(Math.random() * ENCOURAGEMENT.length)];
-    };
-
-    const promptForAttention = () => {
-        if (!voiceRemindersEnabled || mode === 'assessment' || mode === 'research') return;
-
-        const now = Date.now();
-        
-        if (now - lastPromptTime.current < 10000) {
-            console.log('⏭️ Skipping prompt (too soon)');
-            return;
-        }
-
-        const prompt = getRandomPrompt();
-        console.log('🔔 ATTENTION PROMPT:', prompt);
-        
-        speakText(prompt, {
-            rate: 0.9,
-            pitch: 1.2,
-            volume: 0.9
-        });
-        
-        lastPromptTime.current = now;
-    };
-
-    // ATTENTION TRACKING
+    // ============================================
+    // SIMPLIFIED EYE CONTACT MONITORING
+    // ============================================
     useEffect(() => {
-        if (!faceDetected || mode === 'assessment' || mode === 'research') {
-            if (promptTimer.current) {
-                clearTimeout(promptTimer.current);
-                promptTimer.current = null;
-            }
+        // Skip if disabled
+        if (!voiceRemindersEnabled || mode === 'assessment' || mode === 'research') {
             return;
         }
 
-        const now = Date.now();
+        console.log(`👁️ Eye Contact: ${hasEyeContact ? 'YES ✅' : 'NO ❌'} | Face: ${faceDetected ? 'YES' : 'NO'}`);
 
-        if (!hasEyeContact && lastEyeContact.current) {
-            console.log('👁️ Lost eye contact - starting 4s timer');
-            wasLookingAway.current = true;
-            lostFocusTime.current = now;
+        // ==== LOST EYE CONTACT ====
+        if (!hasEyeContact && lastEyeContactValue.current) {
+            console.log('🔴 EYE CONTACT LOST → Starting 4s timer');
             
-            if (promptTimer.current) {
-                clearTimeout(promptTimer.current);
+            // Clear any existing timer
+            if (noEyeContactTimer.current) {
+                clearTimeout(noEyeContactTimer.current);
             }
             
-            promptTimer.current = setTimeout(() => {
-                console.log('⏰ 4 seconds passed - prompting now!');
-                promptForAttention();
+            // Start 4-second timer
+            noEyeContactTimer.current = setTimeout(() => {
+                console.log('⏰ 4 SECONDS NO EYE CONTACT!');
+                
+                // Check cooldown
+                const now = Date.now();
+                if (now - lastPromptTime.current < 10000) {
+                    console.log('   ⏭️ Cooldown active (10s between prompts)');
+                    return;
+                }
+                
+                // Get random prompt
+                if (usedPrompts.current.length >= ATTENTION_PROMPTS.length) {
+                    usedPrompts.current = [];
+                }
+                const available = ATTENTION_PROMPTS.filter(p => !usedPrompts.current.includes(p));
+                const prompt = available[Math.floor(Math.random() * available.length)];
+                usedPrompts.current.push(prompt);
+                
+                console.log('   🔔 Prompting:', prompt);
+                speakNow(prompt, 'attention');
+                lastPromptTime.current = now;
+                
             }, 4000);
         }
-        else if (hasEyeContact && !lastEyeContact.current) {
-            console.log('👁️ Regained eye contact!');
+        
+        // ==== REGAINED EYE CONTACT ====
+        else if (hasEyeContact && !lastEyeContactValue.current) {
+            console.log('🟢 EYE CONTACT REGAINED');
             
-            if (promptTimer.current) {
-                clearTimeout(promptTimer.current);
-                promptTimer.current = null;
+            // Clear timer
+            if (noEyeContactTimer.current) {
+                console.log('   Clearing timer');
+                clearTimeout(noEyeContactTimer.current);
+                noEyeContactTimer.current = null;
             }
             
-            if (wasLookingAway.current && voiceRemindersEnabled) {
-                const timeAway = now - lostFocusTime.current;
-                if (timeAway > 4000) {
-                    const encouragement = getRandomEncouragement();
-                    console.log('🎉 ENCOURAGEMENT:', encouragement);
-                    speakText(encouragement, {
-                        rate: 1.0,
-                        pitch: 1.2,
-                        volume: 0.8
-                    });
-                }
-            }
-            
-            wasLookingAway.current = false;
+            // Encouragement
+            const encouragement = ENCOURAGEMENT[Math.floor(Math.random() * ENCOURAGEMENT.length)];
+            console.log('   🎉 Encouragement:', encouragement);
+            speakNow(encouragement, 'encouragement');
         }
 
-        lastEyeContact.current = hasEyeContact;
-    }, [hasEyeContact, faceDetected, voiceRemindersEnabled, mode]);
+        // Update last value
+        lastEyeContactValue.current = hasEyeContact;
+        
+    }, [hasEyeContact, voiceRemindersEnabled, mode]);
 
+    // Cleanup
     useEffect(() => {
         return () => {
-            if (promptTimer.current) {
-                clearTimeout(promptTimer.current);
+            if (noEyeContactTimer.current) {
+                clearTimeout(noEyeContactTimer.current);
             }
-            lipSyncController.destroy();
-            speechTimingEstimator.stop();
         };
     }, []);
 
-    // EDUCATIONAL CONTENT FUNCTIONS
+    // EDUCATIONAL CONTENT
     const generateAIContent = async (topic) => {
-        if (!openaiRef.current) {
-            throw new Error('OpenAI not initialized');
-        }
-
-        const engagementLevel = eyeContactScore > 70 ? 'high' : eyeContactScore > 40 ? 'medium' : 'low';
-        
-        const systemPrompt = `You are a friendly teacher for children with autism. Keep responses:
-- Very simple and short (2-3 sentences max)
-- Enthusiastic and positive
-- About ${topic}
-- Appropriate for engagement level: ${engagementLevel}`;
+        if (!openaiRef.current) throw new Error('OpenAI not initialized');
 
         const response = await openaiRef.current.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: `Tell me something interesting about ${topic}` }
+                { role: "system", content: `Friendly teacher. 2 sentences max about ${topic}.` },
+                { role: "user", content: `Tell me about ${topic}` }
             ],
-            max_tokens: 100,
+            max_tokens: 80,
             temperature: 0.8
         });
 
@@ -226,7 +186,6 @@ export default function EducationEngine({
 
     const generateContent = async (topic) => {
         if (isGenerating) return;
-        
         setIsGenerating(true);
         
         try {
@@ -235,106 +194,113 @@ export default function EducationEngine({
             if (useAI) {
                 try {
                     content = await generateAIContent(topic);
-                    console.log('🤖 AI content generated');
                 } catch (error) {
-                    console.error('AI error, using fallback:', error);
-                    content = getFallbackContent(topic);
+                    console.error('AI error:', error.message);
+                    content = fallbackContent.education[topic];
                 }
             } else {
-                content = getFallbackContent(topic);
+                content = fallbackContent.education[topic];
             }
             
             setCurrentContent(content);
-            
-            setConversationHistory(prev => [...prev, {
-                role: 'assistant',
-                content: content,
-                timestamp: Date.now(),
-                topic: topic
-            }]);
+            setConversationHistory(prev => [...prev, { content, topic, timestamp: Date.now() }]);
             
             if (speechEnabled) {
-                speakText(content, {
-                    rate: 0.85,
-                    pitch: 1.1,
-                    volume: 0.9
-                });
+                speakNow(content, 'educational');
             }
             
-        } catch (error) {
-            console.error('Content generation error:', error);
-            const fallback = "Let me think of something interesting to tell you!";
-            setCurrentContent(fallback);
-            if (speechEnabled) {
-                speakText(fallback);
-            }
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const getFallbackContent = (topic) => {
-        if (fallbackContent.education[topic]) {
-            return fallbackContent.education[topic];
-        }
-        return `Let's learn about ${topic}!`;
-    };
-
-    // Automatic content at milestones
+    // Milestones
     useEffect(() => {
         if (mode === 'prt' && eyeContactScore > 0) {
-            const currentMilestone = Math.floor(eyeContactScore / 50);
+            const milestone = Math.floor(eyeContactScore / 50);
             
-            if (currentMilestone > lastScoreMilestone.current) {
-                lastScoreMilestone.current = currentMilestone;
-                
+            if (milestone > lastScoreMilestone.current) {
+                lastScoreMilestone.current = milestone;
                 const topics = ['animals', 'space', 'colors', 'numbers'];
-                const randomTopic = topics[Math.floor(Math.random() * topics.length)];
-                
-                console.log(`🎯 Milestone ${currentMilestone * 50}! Topic: ${randomTopic}`);
-                generateContent(randomTopic);
+                const topic = topics[Math.floor(Math.random() * topics.length)];
+                console.log(`🎯 Milestone ${milestone * 50}!`);
+                generateContent(topic);
             }
         }
     }, [eyeContactScore, mode]);
 
+    // Test
+    const testVoice = () => {
+        speakNow('Test voice working!', 'test');
+    };
+
+    const testAttentionPrompt = () => {
+        const prompt = ATTENTION_PROMPTS[0];
+        console.log('🧪 Manual attention test:', prompt);
+        speakNow(prompt, 'attention');
+    };
+
+    // RENDER
     return (
         <div className="education-engine">
+            {/* Test Buttons */}
+            <div style={{ marginBottom: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <button 
+                    onClick={testVoice}
+                    style={{ 
+                        background: '#2196f3', 
+                        color: 'white', 
+                        padding: '10px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    🧪 Test Voice
+                </button>
+                <button 
+                    onClick={testAttentionPrompt}
+                    style={{ 
+                        background: '#ff5722', 
+                        color: 'white', 
+                        padding: '10px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    🔔 Test Prompt
+                </button>
+            </div>
+
+            {/* Status */}
             <div className="ai-status">
-                {useAI ? (
-                    <span className="status-badge ai-active">🤖 AI Active</span>
-                ) : (
-                    <span className="status-badge fallback-active">📝 Fallback Content</span>
-                )}
+                {useAI ? <span className="status-badge ai-active">🤖 AI</span> : <span className="status-badge fallback-active">📝 Fallback</span>}
                 {(mode === 'prompting' || mode === 'prt') && (
                     <span className="status-badge voice-status">
-                        {voiceRemindersEnabled ? '🔊 Voice ON' : '🔇 Voice OFF'}
+                        {voiceRemindersEnabled ? '🔊 ON' : '🔇 OFF'}
                     </span>
                 )}
             </div>
 
+            {/* Content */}
             <div className="content-display">
-                {isGenerating ? (
-                    <p className="generating">Thinking...</p>
-                ) : (
-                    <p className="content">{currentContent || "Click a button to learn something new!"}</p>
-                )}
+                <p className="content">
+                    {isGenerating ? 'Thinking...' : (currentContent || 'Click a button')}
+                </p>
             </div>
             
+            {/* Buttons */}
             <div className="controls">
-                <button onClick={() => generateContent('animals')} disabled={isGenerating}>
-                    🐘 Animals
-                </button>
-                <button onClick={() => generateContent('space')} disabled={isGenerating}>
-                    🚀 Space
-                </button>
-                <button onClick={() => generateContent('colors')} disabled={isGenerating}>
-                    🎨 Colors
-                </button>
-                <button onClick={() => generateContent('numbers')} disabled={isGenerating}>
-                    🔢 Numbers
-                </button>
+                <button onClick={() => generateContent('animals')} disabled={isGenerating}>🐘 Animals</button>
+                <button onClick={() => generateContent('space')} disabled={isGenerating}>🚀 Space</button>
+                <button onClick={() => generateContent('colors')} disabled={isGenerating}>🎨 Colors</button>
+                <button onClick={() => generateContent('numbers')} disabled={isGenerating}>🔢 Numbers</button>
             </div>
 
+            {/* Speech Toggle */}
             <div className="speech-toggle">
                 <label>
                     <input 
@@ -342,39 +308,53 @@ export default function EducationEngine({
                         checked={speechEnabled}
                         onChange={(e) => setSpeechEnabled(e.target.checked)}
                     />
-                    <span>🔊 Enable Educational Speech</span>
+                    <span>🔊 Educational Speech</span>
                 </label>
             </div>
 
+            {/* PRT Stats */}
             {mode === 'prt' && (
                 <div className="engagement-feedback">
-                    <p>Engagement Score: {eyeContactScore}</p>
+                    <p>Score: {eyeContactScore}</p>
                     <div className="progress-bar">
-                        <div 
-                            className="progress-fill" 
-                            style={{ width: `${Math.min(eyeContactScore, 100)}%` }}
-                        />
+                        <div className="progress-fill" style={{ width: `${Math.min(eyeContactScore, 100)}%` }} />
                     </div>
-                    <p className="milestone-info">Next reward at: {(Math.floor(eyeContactScore / 50) + 1) * 50} points</p>
+                    <p className="milestone-info">Next: {(Math.floor(eyeContactScore / 50) + 1) * 50}</p>
                 </div>
             )}
 
+            {/* History */}
             {conversationHistory.length > 0 && (
                 <div className="conversation-history">
-                    <h4>Recent Topics:</h4>
+                    <h4>Recent:</h4>
                     <ul>
                         {conversationHistory.slice(-3).map((item, idx) => (
-                            <li key={idx}>
-                                {item.topic === 'animals' && '🐘'}
-                                {item.topic === 'space' && '🚀'}
-                                {item.topic === 'colors' && '🎨'}
-                                {item.topic === 'numbers' && '🔢'}
-                                {' '}{item.topic}
-                            </li>
+                            <li key={idx}>{item.topic}</li>
                         ))}
                     </ul>
                 </div>
             )}
+
+            {/* DEBUG */}
+            <div className="debug-info" style={{
+                background: hasEyeContact ? '#e8f5e9' : '#ffebee',
+                border: `2px solid ${hasEyeContact ? '#4caf50' : '#f44336'}`,
+                padding: '12px',
+                borderRadius: '8px',
+                marginTop: '12px'
+            }}>
+                <h4 style={{ margin: '0 0 8px 0', color: hasEyeContact ? '#2e7d32' : '#c62828' }}>
+                    {hasEyeContact ? '✅ EYE CONTACT' : '❌ NO EYE CONTACT'}
+                </h4>
+                <p><strong>Face:</strong> {faceDetected ? '✅' : '❌'}</p>
+                <p><strong>Timer Active:</strong> {noEyeContactTimer.current ? '⏱️ YES (counting to 4s)' : '❌ NO'}</p>
+                <p><strong>Voice Reminders:</strong> {voiceRemindersEnabled ? '✅ ON' : '❌ OFF'}</p>
+                <p style={{ fontSize: '12px', marginTop: '8px', padding: '6px', background: hasEyeContact ? '#fff' : '#fff9c4', borderRadius: '4px' }}>
+                    {hasEyeContact ? 
+                        '👀 Keep looking away for 4 seconds to hear prompt' : 
+                        '⏱️ Stay looking away... counting to 4 seconds...'}
+                </p>
+            </div>
         </div>
     );
 }

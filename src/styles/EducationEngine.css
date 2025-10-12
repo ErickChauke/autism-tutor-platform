@@ -190,3 +190,40 @@
     margin-left: 8px;
     background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
 }
+
+.debug-info {
+    background: var(--soft-gray);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    margin-top: var(--spacing-sm);
+    font-family: monospace;
+}
+
+.debug-info p {
+    margin: 2px 0;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.debug-info {
+    background: #fff3cd;
+    border: 2px solid #ff9800;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    margin-top: var(--spacing-md);
+}
+
+.debug-info h4 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+}
+
+.debug-info p {
+    margin: 4px 0;
+    font-size: 0.9rem;
+    font-family: monospace;
+}
+
+.debug-info p strong {
+    color: #000;
+}
