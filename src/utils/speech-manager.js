@@ -1,6 +1,7 @@
 /**
  * SpeechManager - Centralized speech coordination
  * Prevents multiple voices talking at once
+ * NOW WITH BOY/CHILD VOICE SUPPORT
  */
 
 class SpeechManager {
@@ -16,14 +17,28 @@ class SpeechManager {
     initVoice() {
         const loadVoices = () => {
             const voices = this.synth.getVoices();
+            
+            // Try to find a child/boy voice first
             this.voice = voices.find(voice => 
-                voice.name.includes('Google') || 
-                voice.name.includes('Female') ||
-                voice.name.includes('Samantha') ||
-                voice.lang.startsWith('en')
-            ) || voices[0];
+                voice.name.includes('Daniel') ||      // UK English boy
+                voice.name.includes('Thomas') ||      // French boy
+                voice.name.includes('Junior') ||      // Child voice
+                voice.name.includes('Child') ||
+                voice.name.toLowerCase().includes('boy')
+            );
+            
+            // If no boy voice, try higher-pitched female voices
+            if (!this.voice) {
+                this.voice = voices.find(voice => 
+                    voice.name.includes('Google') || 
+                    voice.name.includes('Female') ||
+                    voice.name.includes('Samantha') ||
+                    voice.lang.startsWith('en')
+                ) || voices[0];
+            }
             
             console.log('🔊 Voice loaded:', this.voice?.name || 'Default');
+            console.log('💡 Available voices:', voices.length);
         };
 
         loadVoices();
@@ -45,8 +60,8 @@ class SpeechManager {
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.voice = this.voice;
-            utterance.rate = options.rate || 0.9;
-            utterance.pitch = options.pitch || 1.1;
+            utterance.rate = options.rate || 0.95;      // Slightly faster for child voice
+            utterance.pitch = options.pitch || 1.35;    // Higher pitch = younger sounding
             utterance.volume = options.volume || 0.9;
 
             utterance.onstart = () => {

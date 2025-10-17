@@ -115,7 +115,7 @@ function AvatarModel({ eyeContact, mode }) {
             ref={modelRef}
             object={scene} 
             scale={2.5} 
-            position={[0, -4.0, 0]}
+            position={[0, -4.5, 0]}
         />
     );
 }

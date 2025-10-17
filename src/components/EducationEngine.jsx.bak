@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import OpenAI from 'openai';
 import { lipSyncController } from '../utils/lip-sync-controller';
 import { speechTimingEstimator } from '../utils/speech-timing-estimator';
+import { speechManager } from '../utils/speech-manager';
 import '../styles/EducationEngine.css';
 
 const ATTENTION_PROMPTS = [
@@ -101,7 +102,6 @@ export default function EducationEngine({
     const snippetTimer = useRef(null);
     
     const openaiRef = useRef(null);
-    const speechSynthRef = useRef(window.speechSynthesis);
     const lastScoreMilestone = useRef(0);
     
     const lastPromptTime = useRef(0);
@@ -190,21 +190,42 @@ export default function EducationEngine({
         
         if (currentSpeechType.current === 'educational' && (type === 'attention' || type === 'encouragement')) {
             log('🔄', `Marking interrupted`, 2);
+            
+            if (snippetTimer.current) {
+                log('🚫', `Cancelling pending advance`, 3);
+                clearTimeout(snippetTimer.current);
+                snippetTimer.current = null;
+            }
+            
             snippetWasInterruptedRef.current = true;
             setSnippetWasInterrupted(true);
         }
         
-        speechSynthRef.current.cancel();
+        speechManager.cancel();
         lipSyncController.stop();
         speechTimingEstimator.stop();
         
         const utterance = new SpeechSynthesisUtterance(text);
-        const availableVoices = window.speechSynthesis.getVoices();
-        utterance.voice = availableVoices.find(v => v.name.includes("Zira") || v.name.includes("Female")) || availableVoices[0];
-        console.log("🎤 Voice:", utterance.voice?.name, "Pitch:", 1.5);
-        utterance.rate = 0.9;
-        utterance.pitch = 1.1;
-        utterance.volume = 1.0;
+        const voices = window.speechSynthesis.getVoices();
+        // Prefer female voices - they sound younger with high pitch
+        utterance.voice = voices.find(v => 
+            v.name.includes("Zira") ||       // Microsoft Zira (female)
+            v.name.includes("Female") ||     // Generic female
+            v.name.includes("Google") ||     // Google voices
+            v.name.includes("Samantha")      // Mac female
+        ) || voices.find(v => v.lang.startsWith("en")) || voices[0];
+        const voices = window.speechSynthesis.getVoices();
+        // Prefer female voices - they sound younger with high pitch
+        utterance.voice = voices.find(v => 
+            v.name.includes("Zira") ||       // Microsoft Zira (female)
+            v.name.includes("Female") ||     // Generic female
+            v.name.includes("Google") ||     // Google voices
+            v.name.includes("Samantha")      // Mac female
+        ) || voices.find(v => v.lang.startsWith("en")) || voices[0];
+        console.log("🎤 Voice:", utterance.voice?.name, "Pitch:", 1.35);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.5;  // Higher pitch = younger
+        utterance.volume = 0.9;
         
         utterance.onstart = () => {
             log('▶️', `Speech started: [${type}]`, 1);
@@ -213,14 +234,14 @@ export default function EducationEngine({
             speechStartTime.current = Date.now();
         };
         
-        speechTimingEstimator.start(text, 0.9);
+        speechTimingEstimator.start(text, 0.95);
         
         lipSyncController.start(utterance, () => {
             log('📞', `Lip sync callback: [${type}]`, 1);
             handleSpeechEnd(type);
         });
         
-        speechSynthRef.current.speak(utterance);
+        window.speechSynthesis.speak(utterance);
     };
 
     const handleSnippetEnd = () => {
