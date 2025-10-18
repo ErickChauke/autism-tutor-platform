@@ -243,3 +243,16 @@
     color: var(--text-light);
     margin-top: 8px;
 }
+
+/* Stop button styling */
+.stop-button {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+}
+
+.stop-button:hover {
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
+}
+
+.start-button {
+    background: linear-gradient(135deg, var(--soft-green) 0%, var(--accent-teal) 100%) !important;
+}

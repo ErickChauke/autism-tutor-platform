@@ -3,6 +3,7 @@ import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 import MorphTargetAvatar from './MorphTargetAvatar';
 import EducationEngine from './EducationEngine';
+import { lipSyncController } from '../utils/lip-sync-controller';
 import '../styles/FaceTracker.css';
 
 export default function FaceTracker({ mode, sessionLength = 'standard' }) {
@@ -16,6 +17,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     const [score, setScore] = useState(0);
     const [eyeContactCount, setEyeContactCount] = useState(0);
     const [startTime, setStartTime] = useState(null);
+    const [sessionKey, setSessionKey] = useState(0);
 
     const modeNames = {
         assessment: 'Assessment Mode',
@@ -29,6 +31,34 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
         prompting: 'Visual guidance',
         prt: 'Reinforcement training',
         research: 'Data collection'
+    };
+
+    const handleStop = () => {
+        console.log('🛑 IMMEDIATE STOP - Cancelling everything...');
+        
+        // FIRST: Unmount EducationEngine immediately by changing key
+        setSessionKey(prev => prev + 1);
+        
+        // THEN: Stop all speech and lip sync
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            console.log('✅ Speech cancelled');
+        }
+        
+        lipSyncController.stop();
+        console.log('✅ Lip sync stopped');
+        
+        // THEN: Stop tracking
+        setIsTracking(false);
+        
+        // FINALLY: Reset all state
+        setFaceDetected(false);
+        setEyeContact(false);
+        setScore(0);
+        setEyeContactCount(0);
+        setStartTime(null);
+        
+        console.log('✅ Session completely stopped');
     };
 
     useEffect(() => {
@@ -153,12 +183,21 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                     </div>
                     
                     <div className="controls">
-                        <button 
-                            onClick={() => setIsTracking(!isTracking)}
-                            className="main-control-button"
-                        >
-                            {isTracking ? 'Stop' : 'Start'}
-                        </button>
+                        {!isTracking ? (
+                            <button 
+                                onClick={() => setIsTracking(true)}
+                                className="main-control-button start-button"
+                            >
+                                Start
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleStop}
+                                className="main-control-button stop-button"
+                            >
+                                Stop Session
+                            </button>
+                        )}
                         
                         <div className="status-display">
                             {isTracking ? (
@@ -192,6 +231,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                     {(mode === 'prt' || mode === 'prompting') && isTracking && (
                         <div className="education-section">
                             <EducationEngine 
+                                key={sessionKey}
                                 eyeContactScore={score} 
                                 mode={mode}
                                 hasEyeContact={eyeContact}
