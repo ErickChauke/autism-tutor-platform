@@ -4,9 +4,9 @@ import { lipSyncController } from '../utils/lip-sync-controller';
 import '../styles/EducationEngine.css';
 
 const ATTENTION_PROMPTS = [
-    "Hey, can you please look at me!",
-    "Can you look at my eyes please?",
-    "Hey I am over here!",
+    "Hey, look at me!",
+    "Can you look at my eyes?",
+    "I'm over here!",
     "Let's make eye contact!",
     "Look at me, please!",
 ];
@@ -59,7 +59,128 @@ const educationalSnippets = {
         "Snow forms when water freezes in cold clouds and falls as white fluffy flakes covering the ground beautifully.",
         "Wind is moving air that we cannot see but we can feel it blowing and hear it whistling outside.",
         "Clouds float high in the sky and they can be white and fluffy or dark and gray before storms arrive."
+    ],
+    ocean: [
+        "The ocean is a huge body of salt water that covers most of our planet Earth's surface all around.",
+        "Dolphins are smart ocean animals that swim in groups and communicate with clicks and whistles to each other.",
+        "Coral reefs are beautiful underwater structures where thousands of colorful fish live together in communities every day.",
+        "Whales are the largest animals on Earth and they can sing songs that travel for miles through the water.",
+        "Starfish have five arms and can regrow a new arm if one breaks off, which is truly amazing to see."
+    ],
+    dinosaurs: [
+        "Dinosaurs were giant reptiles that lived on Earth millions of years ago before humans ever existed at all.",
+        "The Tyrannosaurus Rex was one of the biggest meat-eating dinosaurs with huge teeth and powerful jaws for hunting.",
+        "Some dinosaurs were as tall as buildings while others were as small as chickens running around on land.",
+        "Plant-eating dinosaurs had long necks to reach leaves high up in trees and ate plants all day long.",
+        "All dinosaurs became extinct millions of years ago, but scientists study their fossils to learn about them today."
+    ],
+    planets: [
+        "Our solar system has eight planets that orbit around the sun in space in a specific order.",
+        "Earth is the third planet from the sun and the only one we know of with life on it.",
+        "Jupiter is the largest planet in our solar system and has a giant red spot that is actually a storm.",
+        "Saturn has beautiful rings made of ice and rock that circle around it in space constantly moving around.",
+        "Mars is called the red planet because its soil contains iron that makes it look reddish from far away."
+    ],
+    insects: [
+        "Insects are small creatures with six legs and three body parts that live almost everywhere on our planet Earth.",
+        "Bees are important insects that help flowers grow by spreading pollen and they make sweet honey in hives.",
+        "Butterflies start as caterpillars and transform into beautiful flying insects with colorful wings through a special process called metamorphosis.",
+        "Ants are very strong for their size and can carry objects many times heavier than their own body weight.",
+        "Ladybugs are helpful insects that eat harmful bugs in gardens and they have spots on their red backs."
+    ],
+    food: [
+        "Fruits are sweet foods that grow on trees and plants and they have seeds inside to make new plants.",
+        "Vegetables come from different parts of plants like roots, stems, and leaves and are very healthy to eat.",
+        "Bread is made from wheat flour, water, and yeast which makes it rise and become soft and fluffy.",
+        "Milk comes from cows and contains calcium that helps build strong bones and teeth in our bodies.",
+        "Pizza is a popular food with cheese and toppings on dough and people all around the world enjoy eating it."
+    ],
+    transportation: [
+        "Cars are vehicles with four wheels that drive on roads and take people from one place to another quickly.",
+        "Airplanes fly high in the sky and can travel very long distances across countries and oceans in hours.",
+        "Trains run on tracks and can carry many passengers or cargo from city to city every single day.",
+        "Boats and ships float on water and are used to travel across rivers, lakes, and the vast ocean.",
+        "Bicycles have two wheels and pedals that people push with their feet to move forward on paths and roads."
+    ],
+    body: [
+        "The human body has many different parts that all work together to help us live and move around.",
+        "Our heart is a special muscle that pumps blood throughout our body every second of every single day.",
+        "The brain is like a computer inside our head that controls everything we think, feel, and do constantly.",
+        "Our bones form a skeleton that gives our body shape and protects our important organs inside us.",
+        "We use our five senses to see, hear, smell, taste, and touch things in the world all around us."
+    ],
+    seasons: [
+        "There are four seasons in a year: spring, summer, fall, and winter, and each one is different and special.",
+        "Spring is when flowers bloom, trees grow new leaves, and baby animals are born after the cold winter ends.",
+        "Summer is the warmest season with long sunny days perfect for swimming, playing outside, and having fun adventures.",
+        "Fall is when leaves change to beautiful colors like red, orange, and yellow before falling off the trees.",
+        "Winter is the coldest season when it might snow and we wear warm coats, hats, and gloves outside."
+    ],
+    music: [
+        "Music is made of different sounds and notes that come together to create songs we can listen to.",
+        "A piano has black and white keys that make different musical notes when you press them down gently.",
+        "Drums are percussion instruments that you hit with sticks or hands to make rhythmic beats and sounds.",
+        "Singing is using your voice to make musical sounds and many people love to sing their favorite songs.",
+        "Different instruments like guitars, violins, and flutes can be played together in a band or orchestra beautifully."
+    ],
+    feelings: [
+        "Feelings are emotions inside us like happiness, sadness, anger, and fear that everyone experiences in life every day.",
+        "When we are happy we might smile, laugh, and feel light and excited about things around us constantly.",
+        "Feeling sad is okay and normal, and it helps to talk to someone we trust when we feel this way.",
+        "Being scared or afraid is our body's way of protecting us from danger or things that seem scary.",
+        "We can feel proud when we work hard and accomplish something difficult that we have been trying to do."
+    ],
+    sports: [
+        "Sports are physical activities and games that people play for fun, exercise, and sometimes in competitions with others.",
+        "Soccer is a popular sport where players kick a ball and try to score goals without using their hands.",
+        "Basketball is played with a round ball that players dribble and shoot through a high hoop to score points.",
+        "Swimming is a great exercise where people move through water using their arms and legs in different strokes.",
+        "Running races test how fast people can move their legs and many athletes train hard to run faster."
+    ],
+    plants: [
+        "Plants are living things that grow from seeds and need water, sunlight, and soil to survive and thrive.",
+        "Trees are the largest plants and they provide oxygen, shade, and homes for many birds and animals in nature.",
+        "Flowers bloom in many beautiful colors and shapes and they attract bees and butterflies with their sweet smell.",
+        "Vegetables like carrots and tomatoes are plants we grow in gardens that we can eat for healthy meals.",
+        "Some plants like cacti can live in hot, dry deserts because they store water inside their thick stems."
+    ],
+    tools: [
+        "Tools are objects that help people build things, fix things, and make work easier in many different ways.",
+        "A hammer is used to hit nails into wood to hold pieces together when building furniture or houses.",
+        "Scissors have two sharp blades that cut paper, cloth, and other materials when you squeeze the handles together.",
+        "A screwdriver turns screws to fasten or unfasten parts and it comes in different sizes for different jobs.",
+        "Measuring tape helps us measure how long, wide, or tall something is using inches or centimeters accurately."
+    ],
+    family: [
+        "Family is a group of people who love and care for each other and live together or stay close.",
+        "Parents are adults who take care of children by feeding them, teaching them, and keeping them safe every day.",
+        "Brothers and sisters are siblings who share the same parents and often play together and help each other.",
+        "Grandparents are our parents' parents and they often tell great stories and give warm hugs to their grandchildren.",
+        "Families can look different with different numbers of people, but they all share love and support for one another."
     ]
+};
+
+const topicEmojis = {
+    animals: '🐘',
+    space: '🚀',
+    colors: '🎨',
+    numbers: '🔢',
+    shapes: '🔷',
+    weather: '☁️',
+    ocean: '🌊',
+    dinosaurs: '🦕',
+    planets: '🪐',
+    insects: '🐝',
+    food: '🍕',
+    transportation: '🚗',
+    body: '🫀',
+    seasons: '🍂',
+    music: '🎵',
+    feelings: '😊',
+    sports: '⚽',
+    plants: '🌱',
+    tools: '🔨',
+    family: '👨‍👩‍👧‍👦'
 };
 
 const EYE_CONTACT_DEBOUNCE = 1500;
@@ -78,6 +199,13 @@ const log = (emoji, message, indent = 0) => {
     console.log(`[${timestamp}] ${prefix}${emoji} ${message}`);
 };
 
+// Function to randomly select topics
+function getRandomTopics(count) {
+    const allTopics = Object.keys(educationalSnippets);
+    const shuffled = [...allTopics].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+}
+
 export default function EducationEngine({ 
     eyeContactScore = 0, 
     mode = 'prt',
@@ -90,6 +218,7 @@ export default function EducationEngine({
     const [isGenerating, setIsGenerating] = useState(false);
     const [useAI, setUseAI] = useState(false);
     const [completedTopics, setCompletedTopics] = useState([]);
+    const [sessionTopics, setSessionTopics] = useState([]);
     
     const [activeSnippetTopic, setActiveSnippetTopic] = useState(null);
     const [snippetIndex, setSnippetIndex] = useState(0);
@@ -116,14 +245,20 @@ export default function EducationEngine({
 
     // Session length configurations
     const sessionConfig = {
-        quick: { maxTopics: 2, label: 'Quick Session (2 topics)' },
-        standard: { maxTopics: 4, label: 'Standard Session (4 topics)' },
-        extended: { maxTopics: 6, label: 'Extended Session (6 topics)' }
+        quick: { maxTopics: 2, label: 'Quick Session' },
+        standard: { maxTopics: 4, label: 'Standard Session' },
+        extended: { maxTopics: 6, label: 'Extended Session' }
     };
 
     const config = sessionConfig[sessionLength] || sessionConfig.standard;
-    const availableTopics = Object.keys(educationalSnippets);
     const canSelectMore = completedTopics.length < config.maxTopics;
+
+    // Initialize random topics for this session
+    useEffect(() => {
+        const randomTopics = getRandomTopics(config.maxTopics);
+        setSessionTopics(randomTopics);
+        log('🎲', `Random topics selected: ${randomTopics.join(', ')}`, 0);
+    }, [config.maxTopics]);
 
     useEffect(() => {
         if (process.env.REACT_APP_OPENAI_KEY) {
@@ -207,7 +342,6 @@ export default function EducationEngine({
             } else {
                 log('🎉', `ALL COMPLETE for ${activeSnippetTopicRef.current}!`, 2);
                 
-                // Mark topic as completed
                 setCompletedTopics(prev => [...prev, activeSnippetTopicRef.current]);
                 
                 activeSnippetTopicRef.current = null;
@@ -333,21 +467,12 @@ export default function EducationEngine({
         startSnippetContent(topic);
     };
 
-    const topicEmojis = {
-        animals: '🐘',
-        space: '🚀',
-        colors: '🎨',
-        numbers: '🔢',
-        shapes: '🔷',
-        weather: '☁️'
-    };
-
     return (
         <div className="education-engine">
             <div className="ai-status">
                 {useAI ? <span className="status-badge ai-active">🤖 AI</span> : <span className="status-badge fallback-active">📝 Fallback</span>}
                 <span className="status-badge" style={{ background: '#673ab7', color: 'white', marginLeft: '8px' }}>
-                    {config.label}
+                    {config.label} ({config.maxTopics} topics)
                 </span>
                 <span className="status-badge" style={{ background: '#ff9800', color: 'white', marginLeft: '8px' }}>
                     {completedTopics.length} / {config.maxTopics} completed
@@ -362,12 +487,12 @@ export default function EducationEngine({
 
             <div className="content-display">
                 <p className="content">
-                    {currentContent || `Choose ${config.maxTopics} topics for your ${sessionLength} session`}
+                    {currentContent || `Choose from ${config.maxTopics} randomly selected topics for your ${sessionLength} session`}
                 </p>
             </div>
             
             <div className="controls">
-                {availableTopics.map(topic => (
+                {sessionTopics.map(topic => (
                     <button 
                         key={topic}
                         onClick={() => generateContent(topic)} 
