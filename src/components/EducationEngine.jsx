@@ -199,7 +199,6 @@ const log = (emoji, message, indent = 0) => {
     console.log(`[${timestamp}] ${prefix}${emoji} ${message}`);
 };
 
-// Function to randomly select topics
 function getRandomTopics(count) {
     const allTopics = Object.keys(educationalSnippets);
     const shuffled = [...allTopics].sort(() => Math.random() - 0.5);
@@ -243,17 +242,15 @@ export default function EducationEngine({
     const currentSpeechType = useRef(null);
     const isSpeaking = useRef(false);
 
-    // Session length configurations
     const sessionConfig = {
-        quick: { maxTopics: 2, label: 'Quick Session' },
-        standard: { maxTopics: 4, label: 'Standard Session' },
-        extended: { maxTopics: 6, label: 'Extended Session' }
+        quick: { maxTopics: 2, label: 'Quick' },
+        standard: { maxTopics: 4, label: 'Standard' },
+        extended: { maxTopics: 6, label: 'Extended' }
     };
 
     const config = sessionConfig[sessionLength] || sessionConfig.standard;
     const canSelectMore = completedTopics.length < config.maxTopics;
 
-    // Initialize random topics for this session
     useEffect(() => {
         const randomTopics = getRandomTopics(config.maxTopics);
         setSessionTopics(randomTopics);
@@ -470,25 +467,18 @@ export default function EducationEngine({
     return (
         <div className="education-engine">
             <div className="ai-status">
-                {useAI ? <span className="status-badge ai-active">🤖 AI</span> : <span className="status-badge fallback-active">📝 Fallback</span>}
-                <span className="status-badge" style={{ background: '#673ab7', color: 'white', marginLeft: '8px' }}>
-                    {config.label} ({config.maxTopics} topics)
+                <span className="status-badge" style={{ background: '#673ab7', color: 'white' }}>
+                    {config.label}
                 </span>
                 <span className="status-badge" style={{ background: '#ff9800', color: 'white', marginLeft: '8px' }}>
-                    {completedTopics.length} / {config.maxTopics} completed
+                    {completedTopics.length} / {config.maxTopics}
                 </span>
                 {activeSnippetTopic && (
                     <span className="status-badge" style={{ background: '#9c27b0', color: 'white', marginLeft: '8px' }}>
-                        📚 {activeSnippetTopic.toUpperCase()} {snippetIndex + 1} / {educationalSnippets[activeSnippetTopic].length}
+                        {activeSnippetTopic.toUpperCase()} {snippetIndex + 1}/{educationalSnippets[activeSnippetTopic].length}
                         {snippetWasInterrupted && ' 🔄'}
                     </span>
                 )}
-            </div>
-
-            <div className="content-display">
-                <p className="content">
-                    {currentContent || `Choose from ${config.maxTopics} randomly selected topics for your ${sessionLength} session`}
-                </p>
             </div>
             
             <div className="controls">
@@ -515,7 +505,7 @@ export default function EducationEngine({
                     textAlign: 'center',
                     fontWeight: 'bold'
                 }}>
-                    🎉 Session Complete! You finished all {config.maxTopics} topics!
+                    🎉 Session Complete!
                 </div>
             )}
 
@@ -528,7 +518,7 @@ export default function EducationEngine({
                     border: '2px solid #2196f3'
                 }}>
                     <h4 style={{ margin: '0 0 8px 0', color: '#1976d2' }}>
-                        📚 {activeSnippetTopic.charAt(0).toUpperCase() + activeSnippetTopic.slice(1)} - Progress
+                        {activeSnippetTopic.charAt(0).toUpperCase() + activeSnippetTopic.slice(1)}
                     </h4>
                     {educationalSnippets[activeSnippetTopic].map((snippet, idx) => (
                         <div key={idx} style={{
@@ -542,7 +532,7 @@ export default function EducationEngine({
                             {idx < snippetIndex && '✅ '}
                             {idx === snippetIndex && (snippetWasInterrupted ? '🔄 ' : '▶️ ')}
                             {idx > snippetIndex && '⏭️ '}
-                            <strong>Snippet {idx + 1}:</strong> {snippet}
+                            {snippet}
                         </div>
                     ))}
                 </div>

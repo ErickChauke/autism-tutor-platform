@@ -26,10 +26,10 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     };
 
     const modeDescriptions = {
-        assessment: 'Silent baseline measurement',
-        prompting: 'Visual cues guide attention',
-        prt: 'Positive reinforcement training',
-        research: 'Controlled data collection'
+        assessment: 'Baseline measurement',
+        prompting: 'Visual guidance',
+        prt: 'Reinforcement training',
+        research: 'Data collection'
     };
 
     useEffect(() => {
@@ -147,7 +147,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
             
             <div className="tracking-layout">
                 <div className="tracking-section">
-                    <h3>Your Camera</h3>
+                    <h3>Camera</h3>
                     <div className="video-container">
                         <video ref={videoRef} style={{ display: 'none' }} />
                         <canvas ref={canvasRef} />
@@ -158,15 +158,15 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                             onClick={() => setIsTracking(!isTracking)}
                             className="main-control-button"
                         >
-                            {isTracking ? '⏸️ Stop Tracking' : '▶️ Start Tracking'}
+                            {isTracking ? 'Stop' : 'Start'}
                         </button>
                         
                         <div className="status-display">
                             {isTracking ? (
                                 faceDetected ? (
-                                    eyeContact ? '✓ Eye Contact!' : '○ Face Detected'
-                                ) : '✗ No Face Detected'
-                            ) : 'Click Start to begin'}
+                                    eyeContact ? '✓ Eye Contact' : '○ Face Detected'
+                                ) : '✗ No Face'
+                            ) : 'Ready'}
                         </div>
 
                         {(mode === 'prompting' || mode === 'prt') && isTracking && (
@@ -177,11 +177,8 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                                         checked={voiceRemindersEnabled}
                                         onChange={(e) => setVoiceRemindersEnabled(e.target.checked)}
                                     />
-                                    <span>Enable Voice Reminders</span>
+                                    <span>Voice Reminders</span>
                                 </label>
-                                <p className="prompt-info">
-                                    {voiceRemindersEnabled ? '🔊 Will remind you to look' : '🔇 Reminders off'}
-                                </p>
                             </div>
                         )}
 
@@ -192,7 +189,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                                     <span className="stat-value">{score}</span>
                                 </div>
                                 <div className="stat">
-                                    <span className="stat-label">Eye Contact</span>
+                                    <span className="stat-label">Count</span>
                                     <span className="stat-value">{eyeContactCount}</span>
                                 </div>
                             </div>
@@ -200,7 +197,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
 
                         {isTracking && (mode === 'assessment' || mode === 'research') && (
                             <div className="session-stats">
-                                <p>Eye contact events: {eyeContactCount}</p>
+                                <p>Events: {eyeContactCount}</p>
                                 <p>Duration: {getDuration()}s</p>
                             </div>
                         )}
@@ -208,7 +205,6 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
 
                     {(mode === 'prt' || mode === 'prompting') && isTracking && (
                         <div className="education-section">
-                            {mode === 'prt' && <h3>📚 Learning Content</h3>}
                             <EducationEngine 
                                 eyeContactScore={score} 
                                 mode={mode}
@@ -222,24 +218,8 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                 </div>
 
                 <div className="avatar-section">
-                    <h3>Training Avatar</h3>
+                    <h3>Avatar</h3>
                     <MorphTargetAvatar eyeContact={eyeContact} mode={mode} />
-                    {mode === 'assessment' && (
-                        <p className="mode-note">📊 Neutral observation mode</p>
-                    )}
-                    {mode === 'prompting' && (
-                        <p className="mode-note">
-                            👁️ Visual cues {voiceRemindersEnabled && isTracking ? '+ voice reminders 🔊' : ''}
-                        </p>
-                    )}
-                    {mode === 'prt' && (
-                        <p className="mode-note">
-                            🎉 Celebration mode {voiceRemindersEnabled && isTracking ? '+ voice reminders 🔊' : ''}
-                        </p>
-                    )}
-                    {mode === 'research' && (
-                        <p className="mode-note">🔬 Standardized testing</p>
-                    )}
                 </div>
             </div>
         </div>

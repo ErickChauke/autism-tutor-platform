@@ -16,8 +16,8 @@ function AvatarModel({ eyeContact, mode }) {
     const eyeContactLostTime = useRef(null);
     const smileDebounceTimer = useRef(null);
     
-    const SMILE_DEBOUNCE_TIME = 1500; // Must maintain eye contact for 1.5s to smile
-    const NEUTRAL_DEBOUNCE_TIME = 1500; // Must look away for 1.5s to go neutral
+    const SMILE_DEBOUNCE_TIME = 1500;
+    const NEUTRAL_DEBOUNCE_TIME = 1500;
 
     useEffect(() => {
         const blinkInterval = setInterval(() => {
@@ -31,20 +31,16 @@ function AvatarModel({ eyeContact, mode }) {
     }, []);
 
     useEffect(() => {
-        // Clear any existing debounce timer
         if (smileDebounceTimer.current) {
             clearTimeout(smileDebounceTimer.current);
             smileDebounceTimer.current = null;
         }
 
-        // Eye contact gained
         if (eyeContact && !lastEyeContactRef.current) {
             eyeContactStartTime.current = Date.now();
             eyeContactLostTime.current = null;
             
-            // Start debounce timer for smile
             smileDebounceTimer.current = setTimeout(() => {
-                // Only smile if still maintaining eye contact
                 if (eyeContact) {
                     if (mode === 'prt') {
                         const celebrations = [0.6, 0.8, 1.0];
@@ -57,14 +53,11 @@ function AvatarModel({ eyeContact, mode }) {
                 }
             }, SMILE_DEBOUNCE_TIME);
         } 
-        // Eye contact lost
         else if (!eyeContact && lastEyeContactRef.current) {
             eyeContactLostTime.current = Date.now();
             eyeContactStartTime.current = null;
             
-            // Start debounce timer for neutral
             smileDebounceTimer.current = setTimeout(() => {
-                // Only go neutral if still not looking
                 if (!eyeContact && mode !== 'assessment') {
                     setSmileIntensity(0);
                 }
@@ -73,7 +66,6 @@ function AvatarModel({ eyeContact, mode }) {
         
         lastEyeContactRef.current = eyeContact;
         
-        // Cleanup
         return () => {
             if (smileDebounceTimer.current) {
                 clearTimeout(smileDebounceTimer.current);
@@ -138,8 +130,6 @@ function AvatarModel({ eyeContact, mode }) {
 }
 
 export default function MorphTargetAvatar({ eyeContact = false, mode = 'prompting' }) {
-    const isSpeaking = lipSyncController.getSpeaking();
-    
     return (
         <div className="avatar-renderer-large">
             <Canvas 
@@ -157,9 +147,6 @@ export default function MorphTargetAvatar({ eyeContact = false, mode = 'promptin
                     <AvatarModel eyeContact={eyeContact} mode={mode} />
                 </Suspense>
             </Canvas>
-            <p className="avatar-status-large">
-                {isSpeaking ? '🗣️ Speaking...' : eyeContact ? 'Great eye contact!' : 'Look at me'}
-            </p>
         </div>
     );
 }
