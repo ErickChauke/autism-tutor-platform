@@ -186,6 +186,7 @@ const topicEmojis = {
 const EYE_CONTACT_DEBOUNCE = 1500;
 const SNIPPET_ADVANCE_DELAY = 100;
 const REPLAY_PAUSE_DURATION = 1000;
+const REPEATED_PROMPT_INTERVAL = 5000; // 5 seconds
 
 const log = (emoji, message, indent = 0) => {
     const prefix = '  '.repeat(indent);
@@ -238,6 +239,7 @@ export default function EducationEngine({
     
     const eyeContactLostTime = useRef(null);
     const debounceTimer = useRef(null);
+    const repeatedPromptInterval = useRef(null);
     
     const currentSpeechType = useRef(null);
     const isSpeaking = useRef(false);
@@ -315,6 +317,16 @@ export default function EducationEngine({
         });
         
         speechSynthRef.current.speak(utterance);
+    };
+
+    const getRandomPrompt = () => {
+        if (usedPrompts.current.length >= ATTENTION_PROMPTS.length) {
+            usedPrompts.current = [];
+        }
+        const available = ATTENTION_PROMPTS.filter(p => !usedPrompts.current.includes(p));
+        const prompt = available[Math.floor(Math.random() * available.length)];
+        usedPrompts.current.push(prompt);
+        return prompt;
     };
 
     const handleSnippetEnd = () => {
@@ -399,37 +411,45 @@ export default function EducationEngine({
         const now = Date.now();
 
         if (hasEyeContact !== lastEyeContactValue.current) {
+            // Clear any existing timers
             if (debounceTimer.current) {
                 clearTimeout(debounceTimer.current);
                 debounceTimer.current = null;
             }
+            if (repeatedPromptInterval.current) {
+                clearInterval(repeatedPromptInterval.current);
+                repeatedPromptInterval.current = null;
+            }
 
             if (!hasEyeContact) {
+                // Eye contact lost
                 eyeContactLostTime.current = now;
                 
+                // Initial debounce timer
                 debounceTimer.current = setTimeout(() => {
                     if (activeSnippetTopicRef.current) {
                         snippetWasInterruptedRef.current = true;
                         setSnippetWasInterrupted(true);
                     }
                     
-                    const promptNow = Date.now();
-                    
-                    if (promptNow - lastPromptTime.current < 10000) {
-                        return;
-                    }
-                    
-                    if (usedPrompts.current.length >= ATTENTION_PROMPTS.length) {
-                        usedPrompts.current = [];
-                    }
-                    const available = ATTENTION_PROMPTS.filter(p => !usedPrompts.current.includes(p));
-                    const prompt = available[Math.floor(Math.random() * available.length)];
-                    usedPrompts.current.push(prompt);
-                    
+                    // First prompt
+                    const prompt = getRandomPrompt();
                     speakNow(prompt, 'attention');
-                    lastPromptTime.current = promptNow;
+                    lastPromptTime.current = Date.now();
+                    
+                    // Start repeated prompts every 5 seconds
+                    repeatedPromptInterval.current = setInterval(() => {
+                        if (!hasEyeContact) {
+                            log('🔁', 'Repeated engagement prompt (still looking away)', 1);
+                            const nextPrompt = getRandomPrompt();
+                            speakNow(nextPrompt, 'attention');
+                            lastPromptTime.current = Date.now();
+                        }
+                    }, REPEATED_PROMPT_INTERVAL);
+                    
                 }, EYE_CONTACT_DEBOUNCE);
             } else {
+                // Eye contact regained
                 const timeAway = eyeContactLostTime.current 
                     ? (now - eyeContactLostTime.current) 
                     : 0;
@@ -454,6 +474,9 @@ export default function EducationEngine({
             }
             if (snippetTimer.current) {
                 clearTimeout(snippetTimer.current);
+            }
+            if (repeatedPromptInterval.current) {
+                clearInterval(repeatedPromptInterval.current);
             }
         };
     }, []);

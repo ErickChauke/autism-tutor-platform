@@ -16,7 +16,6 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     const [score, setScore] = useState(0);
     const [eyeContactCount, setEyeContactCount] = useState(0);
     const [startTime, setStartTime] = useState(null);
-    const [voiceRemindersEnabled, setVoiceRemindersEnabled] = useState(true);
 
     const modeNames = {
         assessment: 'Assessment Mode',
@@ -169,19 +168,6 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                             ) : 'Ready'}
                         </div>
 
-                        {(mode === 'prompting' || mode === 'prt') && isTracking && (
-                            <div className="prompt-toggle">
-                                <label>
-                                    <input 
-                                        type="checkbox"
-                                        checked={voiceRemindersEnabled}
-                                        onChange={(e) => setVoiceRemindersEnabled(e.target.checked)}
-                                    />
-                                    <span>Voice Reminders</span>
-                                </label>
-                            </div>
-                        )}
-
                         {isTracking && mode === 'prt' && (
                             <div className="prt-stats">
                                 <div className="stat">
@@ -210,7 +196,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                                 mode={mode}
                                 hasEyeContact={eyeContact}
                                 faceDetected={faceDetected}
-                                voiceRemindersEnabled={voiceRemindersEnabled}
+                                voiceRemindersEnabled={true}
                                 sessionLength={sessionLength}
                             />
                         </div>

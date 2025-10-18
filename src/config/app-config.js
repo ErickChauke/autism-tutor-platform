@@ -1,19 +1,18 @@
 /**
  * Central configuration for the entire app
- * Change settings here without breaking code
  */
 
 export const APP_CONFIG = {
     // Lip-sync timing
     lipSync: {
-        microMovementInterval: 60,      // ms between micro-movements
-        speechLerpSpeed: 0.8,            // Fast transitions during speech
-        breathLerpSpeed: 0.3,            // Smooth closing during breath
+        microMovementInterval: 60,
+        speechLerpSpeed: 0.8,
+        breathLerpSpeed: 0.3,
         breathDurations: {
-            period: 600,                 // ms
-            comma: 300,                  // ms
-            colon: 400,                  // ms
-            semicolon: 300               // ms
+            period: 600,
+            comma: 300,
+            colon: 400,
+            semicolon: 300
         }
     },
 
@@ -25,57 +24,56 @@ export const APP_CONFIG = {
         voicePreferences: ['Zira', 'Female', 'Google', 'Samantha']
     },
 
-    // Eye contact detection - STRENGTHENED DEBOUNCING
+    // Eye contact detection
     eyeContact: {
-        debounceTime: 1500,              // ms before confirming loss (voice prompts)
-        smileDebounceTime: 1500,         // ms before avatar smiles
-        neutralDebounceTime: 1500,       // ms before avatar goes neutral
-        promptCooldown: 10000,           // ms between prompts
-        accuracyThreshold: 0.05          // Lower = stricter
+        debounceTime: 1500,              // Initial delay before first prompt
+        repeatedPromptInterval: 5000,    // Repeat prompt every 5s while looking away
+        smileDebounceTime: 1500,
+        neutralDebounceTime: 1500,
+        accuracyThreshold: 0.05
     },
 
     // Snippet system
     snippets: {
-        advanceDelay: 100,               // ms between snippets
-        replayDelay: 1000,               // ms before replay
-        interruptionProtection: 3000     // ms protection window
+        advanceDelay: 100,
+        replayDelay: 1000,
+        interruptionProtection: 3000
     },
 
     // Avatar settings
     avatar: {
-        blinkInterval: 8000,             // ms
-        blinkDuration: 150,              // ms
+        blinkInterval: 8000,
+        blinkDuration: 150,
         modelScale: 2.5,
         modelPosition: [0, -4.0, 0],
-        smileTransitionSpeed: 0.1        // Smooth transitions
+        smileTransitionSpeed: 0.1
     },
 
     // Mode descriptions
     modes: {
         assessment: {
             name: 'Assessment Mode',
-            description: 'Silent baseline measurement',
+            description: 'Baseline measurement',
             allowsPrompts: false
         },
         prompting: {
             name: 'Prompting Mode',
-            description: 'Visual cues guide attention',
+            description: 'Visual guidance',
             allowsPrompts: true
         },
         prt: {
             name: 'PRT Mode',
-            description: 'Positive reinforcement training',
+            description: 'Reinforcement training',
             allowsPrompts: true
         },
         research: {
             name: 'Research Mode',
-            description: 'Controlled data collection',
+            description: 'Data collection',
             allowsPrompts: false
         }
     }
 };
 
-// Validation function
 export function validateConfig() {
     const errors = [];
     
@@ -88,7 +86,7 @@ export function validateConfig() {
     }
     
     if (APP_CONFIG.eyeContact.debounceTime < 500) {
-        errors.push('debounceTime should be at least 500ms to prevent flickering');
+        errors.push('debounceTime should be at least 500ms');
     }
     
     if (errors.length > 0) {
