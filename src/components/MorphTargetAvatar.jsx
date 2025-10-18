@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { lipSyncController } from '../utils/lip-sync-controller';
-import { speechTimingEstimator } from '../utils/speech-timing-estimator';
 import '../styles/AvatarRenderer.css';
 
 function AvatarModel({ eyeContact, mode }) {
@@ -11,10 +10,9 @@ function AvatarModel({ eyeContact, mode }) {
     const modelRef = useRef();
     const [blinkState, setBlinkState] = useState(0);
     const [smileIntensity, setSmileIntensity] = useState(0);
-    const [mouthOpen, setMouthOpen] = useState(0);
+    
     const lastEyeContactRef = useRef(false);
 
-    // Blinking animation
     useEffect(() => {
         const blinkInterval = setInterval(() => {
             if (Math.random() > 0.8 && !lipSyncController.getSpeaking()) {
@@ -26,7 +24,6 @@ function AvatarModel({ eyeContact, mode }) {
         return () => clearInterval(blinkInterval);
     }, []);
 
-    // Eye contact response
     useEffect(() => {
         if (eyeContact && !lastEyeContactRef.current) {
             if (mode === 'prt') {
@@ -46,53 +43,36 @@ function AvatarModel({ eyeContact, mode }) {
         lastEyeContactRef.current = eyeContact;
     }, [eyeContact, mode]);
 
-    // Update morph targets every frame
     useFrame(() => {
         if (!scene) return;
 
-        // Get current lip sync value
-        let currentMouthOpen = lipSyncController.getMouthOpen();
-        
-        // Use timing estimator to detect pauses
-        if (lipSyncController.getSpeaking()) {
-            const isActuallySpeaking = speechTimingEstimator.isSpeakingNow();
-            if (!isActuallySpeaking) {
-                // In a pause - close mouth
-                currentMouthOpen = 0;
-            }
-        }
-        
-        setMouthOpen(currentMouthOpen);
+        // Get current mouth opening from lipSyncController
+        const mouthOpen = lipSyncController.getMouthOpen();
 
         scene.traverse((child) => {
             if (child.isMesh && child.morphTargetInfluences && child.morphTargetDictionary) {
                 const dict = child.morphTargetDictionary;
                 
-                // Smile
                 if (dict.mouthSmile !== undefined) {
                     const targetSmile = mode === 'assessment' ? 0 : smileIntensity;
                     child.morphTargetInfluences[dict.mouthSmile] = targetSmile;
                 }
 
-                // Eyes closed (blinking)
                 if (dict.eyesClosed !== undefined) {
                     child.morphTargetInfluences[dict.eyesClosed] = blinkState;
                 }
 
-                // Mouth open (lip sync with pauses)
                 if (dict.mouthOpen !== undefined) {
-                    child.morphTargetInfluences[dict.mouthOpen] = currentMouthOpen;
+                    child.morphTargetInfluences[dict.mouthOpen] = mouthOpen;
                 }
                 
-                // Jaw open (for wider mouth movements)
                 if (dict.jawOpen !== undefined) {
-                    child.morphTargetInfluences[dict.jawOpen] = currentMouthOpen * 0.5;
+                    child.morphTargetInfluences[dict.jawOpen] = mouthOpen * 0.5;
                 }
             }
         });
     });
 
-    // Subtle head animation
     useEffect(() => {
         if (modelRef.current) {
             let animationId;
@@ -122,7 +102,6 @@ function AvatarModel({ eyeContact, mode }) {
 
 export default function MorphTargetAvatar({ eyeContact = false, mode = 'prompting' }) {
     const isSpeaking = lipSyncController.getSpeaking();
-    const isActuallySpeaking = isSpeaking && speechTimingEstimator.isSpeakingNow();
     
     return (
         <div className="avatar-renderer-large">
@@ -142,9 +121,7 @@ export default function MorphTargetAvatar({ eyeContact = false, mode = 'promptin
                 </Suspense>
             </Canvas>
             <p className="avatar-status-large">
-                {isActuallySpeaking ? '🗣️ Speaking...' : 
-                 isSpeaking ? '⏸️ Pause...' :
-                 eyeContact ? 'Great eye contact!' : 'Look at me'}
+                {isSpeaking ? '🗣️ Speaking...' : eyeContact ? 'Great eye contact!' : 'Look at me'}
             </p>
         </div>
     );

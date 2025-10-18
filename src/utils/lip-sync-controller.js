@@ -1,6 +1,9 @@
 /**
- * LipSyncController v2 - With Audio Analysis and Callbacks
+ * LipSyncController - Robust version with error handling
  */
+
+import { APP_CONFIG } from '../config/app-config';
+import { ErrorHandler } from './error-handler';
 
 export class LipSyncController {
     constructor() {
@@ -10,114 +13,139 @@ export class LipSyncController {
         this.mouthOpenTarget = 0;
         this.mouthOpenCurrent = 0;
         this.lastUpdateTime = 0;
-        this.onEndCallback = null; // NEW: Store callback
-        
-        // Audio analysis
-        this.audioContext = null;
-        this.analyser = null;
-        this.mediaStreamSource = null;
         this.isSpeaking = false;
-        this.isActuallySpeaking = false;
-        this.silenceCounter = 0;
-        this.soundThreshold = 0.02;
+        this.isBreathing = false;
         
-        // Pause detection
-        this.lastSoundTime = 0;
-        this.pauseDelay = 150;
+        this.currentWordStartTime = 0;
+        this.microMovementIndex = 0;
+        this.microMovementInterval = APP_CONFIG.lipSync.microMovementInterval;
         
-        console.log('👄 Advanced LipSyncController initialized');
+        console.log('👄 LipSyncController initialized');
     }
 
-    async initAudioContext() {
-        try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 256;
-            this.analyser.smoothingTimeConstant = 0.8;
-            
-            console.log('🔊 Audio context initialized for lip sync');
-            return true;
-        } catch (error) {
-            console.error('❌ Audio context error:', error);
-            return false;
+    start(utterance, onEndCallback) {
+        if (!utterance) {
+            console.error('❌ Cannot start lip-sync: no utterance provided');
+            return;
         }
-    }
 
-    start(utterance, callback) {
         this.currentUtterance = utterance;
         this.isSpeaking = true;
-        this.lastSoundTime = Date.now();
-        this.onEndCallback = callback; // Store callback
+        this.isBreathing = false;
+        this.currentWordStartTime = 0;
+        this.microMovementIndex = 0;
         
-        utterance.onstart = async () => {
-            console.log('👄 Lip sync started with pause detection');
-            this.isActive = true;
-            
-            if (!this.audioContext) {
-                await this.initAudioContext();
-            }
-            
-            this.animate();
+        utterance.onstart = () => {
+            ErrorHandler.safeSync(() => {
+                console.log('👄 Lip sync started');
+                this.isActive = true;
+                this.lastUpdateTime = Date.now();
+                this.currentWordStartTime = Date.now();
+                this.animate();
+            }, null, 'Lip-sync start');
+        };
+
+        utterance.onboundary = (event) => {
+            ErrorHandler.safeSync(() => {
+                if (event.name === 'word') {
+                    const text = utterance.text;
+                    if (!text) return;
+                    
+                    const currentWord = text.substring(event.charIndex).split(/\s+/)[0];
+                    console.log('👄 Word:', currentWord);
+                    
+                    this.currentWordStartTime = Date.now();
+                    this.microMovementIndex = 0;
+                    
+                    if (!this.isBreathing) {
+                        this.triggerWordMovement(currentWord);
+                    }
+                }
+                
+                if (event.name === 'sentence') {
+                    const text = utterance.text;
+                    if (!text) return;
+                    
+                    const char = text[event.charIndex];
+                    this.handlePunctuation(char);
+                }
+            }, null, 'Boundary event');
         };
 
         utterance.onend = () => {
-            console.log('👄 Lip sync ended');
-            this.stop();
-            
-            // Call callback when speech ends
-            if (this.onEndCallback) {
-                console.log('📞 Calling speech end callback');
-                this.onEndCallback();
-                this.onEndCallback = null;
-            }
+            ErrorHandler.safeSync(() => {
+                console.log('👄 Lip sync ended');
+                this.mouthOpenTarget = 0;
+                this.isBreathing = true;
+                
+                setTimeout(() => {
+                    this.stop();
+                    if (onEndCallback) onEndCallback();
+                }, 200);
+            }, null, 'Lip-sync end');
         };
 
-        utterance.onerror = () => {
-            console.log('👄 Lip sync error - stopping');
+        utterance.onerror = (error) => {
+            console.error('❌ Speech error:', error);
             this.stop();
-            
-            // Call callback on error too
-            if (this.onEndCallback) {
-                console.log('📞 Calling speech end callback (error)');
-                this.onEndCallback();
-                this.onEndCallback = null;
-            }
+            if (onEndCallback) onEndCallback();
         };
     }
 
-    detectSpeechActivity() {
-        const now = Date.now();
-        const timeSinceLastSound = now - this.lastSoundTime;
+    handlePunctuation(char) {
+        const durations = APP_CONFIG.lipSync.breathDurations;
         
-        if (this.isSpeaking) {
-            const randomValue = Math.random();
-            
-            if (randomValue < 0.1 && timeSinceLastSound > 300) {
-                this.isActuallySpeaking = false;
-                this.silenceCounter++;
-                
-                if (this.silenceCounter > 2 + Math.random() * 4) {
-                    this.isActuallySpeaking = true;
-                    this.lastSoundTime = now;
-                    this.silenceCounter = 0;
-                }
-            } else {
-                this.isActuallySpeaking = true;
-                this.lastSoundTime = now;
-            }
+        if (char === '.' || char === '!' || char === '?') {
+            console.log('💨 Period breath');
+            this.triggerBreath(durations.period);
+        } else if (char === ',') {
+            console.log('💨 Comma breath');
+            this.triggerBreath(durations.comma);
+        } else if (char === ';') {
+            console.log('💨 Semicolon breath');
+            this.triggerBreath(durations.semicolon);
+        } else if (char === ':') {
+            console.log('💨 Colon breath');
+            this.triggerBreath(durations.colon);
+        }
+    }
+
+    triggerBreath(duration) {
+        this.isBreathing = true;
+        this.mouthOpenTarget = 0;
+        
+        setTimeout(() => {
+            this.isBreathing = false;
+        }, duration);
+    }
+
+    triggerWordMovement(word) {
+        if (!word) return;
+        
+        const w = word.toLowerCase();
+        let baseOpen;
+        
+        if (/^[aeiou]/.test(w) || w.includes('ah') || w.includes('aw')) {
+            baseOpen = 0.7;
+        } else if (w.includes('ee') || w.includes('ea') || /^[e]/.test(w)) {
+            baseOpen = 0.5;
+        } else if (w.includes('oo') || w.includes('ou') || /^[o]/.test(w)) {
+            baseOpen = 0.6;
+        } else if (/^[mbp]/.test(w)) {
+            baseOpen = 0.15;
         } else {
-            this.isActuallySpeaking = false;
+            baseOpen = 0.4;
         }
         
-        return this.isActuallySpeaking;
+        this.mouthOpenTarget = baseOpen + (Math.random() * 0.15 - 0.075);
+        this.mouthOpenTarget = Math.max(0.1, Math.min(0.9, this.mouthOpenTarget));
     }
 
     stop() {
         this.isActive = false;
         this.isSpeaking = false;
-        this.isActuallySpeaking = false;
+        this.isBreathing = false;
         this.mouthOpenTarget = 0;
-        this.silenceCounter = 0;
         
         if (this.animationFrame) {
             cancelAnimationFrame(this.animationFrame);
@@ -128,32 +156,27 @@ export class LipSyncController {
     animate() {
         if (!this.isActive) return;
 
-        const now = Date.now();
-        const deltaTime = now - this.lastUpdateTime;
-        this.lastUpdateTime = now;
-
-        const isProducingSound = this.detectSpeechActivity();
-
-        if (isProducingSound) {
-            const randomFactor = Math.random();
+        ErrorHandler.safeSync(() => {
+            const now = Date.now();
+            const timeSinceWord = now - this.currentWordStartTime;
             
-            if (randomFactor > 0.6) {
-                this.mouthOpenTarget = 0.3 + Math.random() * 0.4;
-            } else if (randomFactor > 0.3) {
-                this.mouthOpenTarget = 0.1 + Math.random() * 0.2;
-            } else {
-                this.mouthOpenTarget = 0.05 + Math.random() * 0.1;
+            if (!this.isBreathing && 
+                timeSinceWord > this.microMovementIndex * this.microMovementInterval) {
+                const variation = (Math.random() * 0.2 - 0.1);
+                const newTarget = this.mouthOpenTarget + variation;
+                this.mouthOpenTarget = Math.max(0.1, Math.min(0.9, newTarget));
+                this.microMovementIndex++;
             }
-        } else {
-            this.mouthOpenTarget = 0.0;
-        }
 
-        const lerpSpeed = this.mouthOpenTarget < this.mouthOpenCurrent ? 0.5 : 0.3;
-        this.mouthOpenCurrent += (this.mouthOpenTarget - this.mouthOpenCurrent) * lerpSpeed;
+            const lerpSpeed = this.isBreathing 
+                ? APP_CONFIG.lipSync.breathLerpSpeed 
+                : APP_CONFIG.lipSync.speechLerpSpeed;
+            
+            this.mouthOpenCurrent += (this.mouthOpenTarget - this.mouthOpenCurrent) * lerpSpeed;
+            this.mouthOpenCurrent = Math.max(0, Math.min(1, this.mouthOpenCurrent));
 
-        this.mouthOpenCurrent = Math.max(0, Math.min(1, this.mouthOpenCurrent));
-
-        this.animationFrame = requestAnimationFrame(() => this.animate());
+            this.animationFrame = requestAnimationFrame(() => this.animate());
+        }, null, 'Animation frame');
     }
 
     getMouthOpen() {
@@ -164,15 +187,12 @@ export class LipSyncController {
         return this.isSpeaking;
     }
 
-    getActuallySpeaking() {
-        return this.isActuallySpeaking;
+    getBreathing() {
+        return this.isBreathing;
     }
 
     destroy() {
         this.stop();
-        if (this.audioContext && this.audioContext.state !== 'closed') {
-            this.audioContext.close();
-        }
     }
 }
 
