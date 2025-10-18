@@ -19,32 +19,32 @@ const ENCOURAGEMENT = [
 
 const educationalSnippets = {
     animals: [
-        "Elephants are very smart animals.",
-        "They can remember things for many years.",
-        "Baby elephants are called calves.",
-        "Elephants use their trunks like hands.",
-        "They love to play in water and mud."
+        "Elephants are very smart animals that live in family groups and can remember things for many years.",
+        "They use their long trunks like hands to pick up food, drink water, and greet each other affectionately.",
+        "Baby elephants are called calves and they stay very close to their mothers for several years while learning.",
+        "Elephants love to play in water and mud to cool down and protect their skin from the sun.",
+        "They communicate with each other using low rumbling sounds that humans sometimes cannot even hear at all."
     ],
     space: [
-        "Space is the area beyond Earth's atmosphere.",
-        "The sun is our closest star.",
-        "There are billions of galaxies in space.",
-        "Astronauts float because there's no gravity.",
-        "The moon orbits around our planet Earth."
+        "Space is the vast area beyond Earth's atmosphere where planets, stars, and galaxies exist in the universe around us.",
+        "The sun is our closest star and it provides light and warmth to all living things here on Earth.",
+        "There are billions of galaxies in space, each containing millions or even billions of stars spread throughout the universe.",
+        "Astronauts float in space because there is no gravity pulling them down like it does here on Earth.",
+        "The moon orbits around our planet Earth and we can see it shining brightly in the night sky above."
     ],
     colors: [
-        "Red, blue, and yellow are primary colors.",
-        "You can mix colors to make new ones.",
-        "Red and blue make purple.",
-        "Blue and yellow make green.",
-        "Colors can make us feel different emotions."
+        "Red, blue, and yellow are called primary colors because you cannot make them by mixing other colors together at all.",
+        "You can mix primary colors together to create new colors like purple, green, and orange which are called secondary colors.",
+        "When you mix red and blue paint together carefully, you will create a beautiful purple color for your artwork.",
+        "Blue and yellow mixed together will make green, which is the color of grass, trees, and many leaves outside.",
+        "Colors can make us feel different emotions like red for excitement, blue for calmness, and yellow for happiness and joy."
     ],
     numbers: [
-        "Numbers help us count things.",
-        "One, two, three, four, five.",
-        "We use numbers every single day.",
-        "Numbers can be added together.",
-        "Ten is a special number with two digits."
+        "Numbers are special symbols that help us count things like toys, apples, books, and many other objects around us.",
+        "One, two, three, four, five are the first five counting numbers that we learn when we are very young.",
+        "We use numbers every single day to tell time, count money, measure things, and even play fun games together.",
+        "Numbers can be added together to make bigger numbers, like two plus three equals five in total when counted.",
+        "Ten is a special number with two digits, one and zero, and it helps us count to higher numbers easily."
     ]
 };
 
@@ -152,7 +152,6 @@ export default function EducationEngine({
         utterance.pitch = 1.1;
         utterance.volume = 1.0;
         
-        // Start lip sync
         lipSyncController.start(utterance, () => {
             handleSpeechEnd(type);
         });
