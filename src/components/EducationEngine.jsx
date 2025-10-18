@@ -4,9 +4,9 @@ import { lipSyncController } from '../utils/lip-sync-controller';
 import '../styles/EducationEngine.css';
 
 const ATTENTION_PROMPTS = [
-    "Hey, look at me!",
-    "Can you look at my eyes?",
-    "I'm over here!",
+    "Hey, can you please look at me!",
+    "Can you look at my eyes please?",
+    "Hey I am over here!",
     "Let's make eye contact!",
     "Look at me, please!",
 ];
@@ -45,6 +45,20 @@ const educationalSnippets = {
         "We use numbers every single day to tell time, count money, measure things, and even play fun games together.",
         "Numbers can be added together to make bigger numbers, like two plus three equals five in total when counted.",
         "Ten is a special number with two digits, one and zero, and it helps us count to higher numbers easily."
+    ],
+    shapes: [
+        "Circles are round shapes with no corners or edges, like wheels, balls, and plates we use every day.",
+        "Squares have four equal sides and four corners, and we see them in windows, boxes, and building blocks.",
+        "Triangles have three sides and three corners, and they are very strong shapes used in bridges and buildings.",
+        "Rectangles are like stretched squares with two long sides and two short sides, like doors and books we read.",
+        "Stars have pointed tips radiating outward and we see them twinkling beautifully in the dark night sky above."
+    ],
+    weather: [
+        "The sun shines brightly in the sky giving us light and warmth during the daytime hours each day.",
+        "Rain falls from clouds in the sky and helps plants grow while filling rivers, lakes, and oceans with water.",
+        "Snow forms when water freezes in cold clouds and falls as white fluffy flakes covering the ground beautifully.",
+        "Wind is moving air that we cannot see but we can feel it blowing and hear it whistling outside.",
+        "Clouds float high in the sky and they can be white and fluffy or dark and gray before storms arrive."
     ]
 };
 
@@ -69,12 +83,13 @@ export default function EducationEngine({
     mode = 'prt',
     hasEyeContact = false,
     faceDetected = false,
-    voiceRemindersEnabled = true
+    voiceRemindersEnabled = true,
+    sessionLength = 'standard'
 }) {
     const [currentContent, setCurrentContent] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [useAI, setUseAI] = useState(false);
-    const [speechEnabled, setSpeechEnabled] = useState(true);
+    const [completedTopics, setCompletedTopics] = useState([]);
     
     const [activeSnippetTopic, setActiveSnippetTopic] = useState(null);
     const [snippetIndex, setSnippetIndex] = useState(0);
@@ -98,6 +113,17 @@ export default function EducationEngine({
     
     const currentSpeechType = useRef(null);
     const isSpeaking = useRef(false);
+
+    // Session length configurations
+    const sessionConfig = {
+        quick: { maxTopics: 2, label: 'Quick Session (2 topics)' },
+        standard: { maxTopics: 4, label: 'Standard Session (4 topics)' },
+        extended: { maxTopics: 6, label: 'Extended Session (6 topics)' }
+    };
+
+    const config = sessionConfig[sessionLength] || sessionConfig.standard;
+    const availableTopics = Object.keys(educationalSnippets);
+    const canSelectMore = completedTopics.length < config.maxTopics;
 
     useEffect(() => {
         if (process.env.REACT_APP_OPENAI_KEY) {
@@ -180,6 +206,10 @@ export default function EducationEngine({
                 }, SNIPPET_ADVANCE_DELAY);
             } else {
                 log('🎉', `ALL COMPLETE for ${activeSnippetTopicRef.current}!`, 2);
+                
+                // Mark topic as completed
+                setCompletedTopics(prev => [...prev, activeSnippetTopicRef.current]);
+                
                 activeSnippetTopicRef.current = null;
                 snippetIndexRef.current = 0;
                 setActiveSnippetTopic(null);
@@ -298,15 +328,30 @@ export default function EducationEngine({
     }, []);
 
     const generateContent = async (topic) => {
-        if (isGenerating) return;
+        if (isGenerating || !canSelectMore || completedTopics.includes(topic)) return;
         log('🎯', `Button clicked: ${topic}`, 0);
         startSnippetContent(topic);
+    };
+
+    const topicEmojis = {
+        animals: '🐘',
+        space: '🚀',
+        colors: '🎨',
+        numbers: '🔢',
+        shapes: '🔷',
+        weather: '☁️'
     };
 
     return (
         <div className="education-engine">
             <div className="ai-status">
                 {useAI ? <span className="status-badge ai-active">🤖 AI</span> : <span className="status-badge fallback-active">📝 Fallback</span>}
+                <span className="status-badge" style={{ background: '#673ab7', color: 'white', marginLeft: '8px' }}>
+                    {config.label}
+                </span>
+                <span className="status-badge" style={{ background: '#ff9800', color: 'white', marginLeft: '8px' }}>
+                    {completedTopics.length} / {config.maxTopics} completed
+                </span>
                 {activeSnippetTopic && (
                     <span className="status-badge" style={{ background: '#9c27b0', color: 'white', marginLeft: '8px' }}>
                         📚 {activeSnippetTopic.toUpperCase()} {snippetIndex + 1} / {educationalSnippets[activeSnippetTopic].length}
@@ -317,16 +362,37 @@ export default function EducationEngine({
 
             <div className="content-display">
                 <p className="content">
-                    {currentContent || 'Click Animals, Space, Colors, or Numbers'}
+                    {currentContent || `Choose ${config.maxTopics} topics for your ${sessionLength} session`}
                 </p>
             </div>
             
             <div className="controls">
-                <button onClick={() => generateContent('animals')} disabled={activeSnippetTopic}>🐘 Animals</button>
-                <button onClick={() => generateContent('space')} disabled={activeSnippetTopic}>🚀 Space</button>
-                <button onClick={() => generateContent('colors')} disabled={activeSnippetTopic}>🎨 Colors</button>
-                <button onClick={() => generateContent('numbers')} disabled={activeSnippetTopic}>🔢 Numbers</button>
+                {availableTopics.map(topic => (
+                    <button 
+                        key={topic}
+                        onClick={() => generateContent(topic)} 
+                        disabled={activeSnippetTopic || !canSelectMore || completedTopics.includes(topic)}
+                        className={completedTopics.includes(topic) ? 'completed' : ''}
+                    >
+                        {topicEmojis[topic]} {topic.charAt(0).toUpperCase() + topic.slice(1)}
+                        {completedTopics.includes(topic) && ' ✅'}
+                    </button>
+                ))}
             </div>
+
+            {!canSelectMore && !activeSnippetTopic && (
+                <div style={{ 
+                    background: '#4caf50', 
+                    color: 'white',
+                    padding: '16px', 
+                    borderRadius: '8px', 
+                    marginTop: '12px',
+                    textAlign: 'center',
+                    fontWeight: 'bold'
+                }}>
+                    🎉 Session Complete! You finished all {config.maxTopics} topics!
+                </div>
+            )}
 
             {activeSnippetTopic && (
                 <div style={{ 

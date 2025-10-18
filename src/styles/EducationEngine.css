@@ -227,3 +227,15 @@
 .debug-info p strong {
     color: #000;
 }
+
+/* Completed topic button styling */
+.controls button.completed {
+    background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.controls button.completed:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}

@@ -5,7 +5,7 @@ import MorphTargetAvatar from './MorphTargetAvatar';
 import EducationEngine from './EducationEngine';
 import '../styles/FaceTracker.css';
 
-export default function FaceTracker({ mode }) {
+export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     
@@ -169,7 +169,6 @@ export default function FaceTracker({ mode }) {
                             ) : 'Click Start to begin'}
                         </div>
 
-                        {/* Voice Reminders Toggle */}
                         {(mode === 'prompting' || mode === 'prt') && isTracking && (
                             <div className="prompt-toggle">
                                 <label>
@@ -207,7 +206,6 @@ export default function FaceTracker({ mode }) {
                         )}
                     </div>
 
-                    {/* Education Engine - Pass eye contact state for voice reminders */}
                     {(mode === 'prt' || mode === 'prompting') && isTracking && (
                         <div className="education-section">
                             {mode === 'prt' && <h3>📚 Learning Content</h3>}
@@ -217,6 +215,7 @@ export default function FaceTracker({ mode }) {
                                 hasEyeContact={eyeContact}
                                 faceDetected={faceDetected}
                                 voiceRemindersEnabled={voiceRemindersEnabled}
+                                sessionLength={sessionLength}
                             />
                         </div>
                     )}
