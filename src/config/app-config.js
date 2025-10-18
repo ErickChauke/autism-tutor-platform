@@ -25,9 +25,11 @@ export const APP_CONFIG = {
         voicePreferences: ['Zira', 'Female', 'Google', 'Samantha']
     },
 
-    // Eye contact detection
+    // Eye contact detection - STRENGTHENED DEBOUNCING
     eyeContact: {
-        debounceTime: 1500,              // ms before confirming loss
+        debounceTime: 1500,              // ms before confirming loss (voice prompts)
+        smileDebounceTime: 1500,         // ms before avatar smiles
+        neutralDebounceTime: 1500,       // ms before avatar goes neutral
         promptCooldown: 10000,           // ms between prompts
         accuracyThreshold: 0.05          // Lower = stricter
     },
@@ -44,7 +46,8 @@ export const APP_CONFIG = {
         blinkInterval: 8000,             // ms
         blinkDuration: 150,              // ms
         modelScale: 2.5,
-        modelPosition: [0, -4.0, 0]
+        modelPosition: [0, -4.0, 0],
+        smileTransitionSpeed: 0.1        // Smooth transitions
     },
 
     // Mode descriptions
@@ -82,6 +85,10 @@ export function validateConfig() {
     
     if (APP_CONFIG.snippets.advanceDelay < 0) {
         errors.push('advanceDelay must be positive');
+    }
+    
+    if (APP_CONFIG.eyeContact.debounceTime < 500) {
+        errors.push('debounceTime should be at least 500ms to prevent flickering');
     }
     
     if (errors.length > 0) {

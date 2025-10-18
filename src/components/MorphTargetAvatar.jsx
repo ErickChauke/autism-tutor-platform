@@ -12,6 +12,12 @@ function AvatarModel({ eyeContact, mode }) {
     const [smileIntensity, setSmileIntensity] = useState(0);
     
     const lastEyeContactRef = useRef(false);
+    const eyeContactStartTime = useRef(null);
+    const eyeContactLostTime = useRef(null);
+    const smileDebounceTimer = useRef(null);
+    
+    const SMILE_DEBOUNCE_TIME = 1500; // Must maintain eye contact for 1.5s to smile
+    const NEUTRAL_DEBOUNCE_TIME = 1500; // Must look away for 1.5s to go neutral
 
     useEffect(() => {
         const blinkInterval = setInterval(() => {
@@ -25,28 +31,59 @@ function AvatarModel({ eyeContact, mode }) {
     }, []);
 
     useEffect(() => {
+        // Clear any existing debounce timer
+        if (smileDebounceTimer.current) {
+            clearTimeout(smileDebounceTimer.current);
+            smileDebounceTimer.current = null;
+        }
+
+        // Eye contact gained
         if (eyeContact && !lastEyeContactRef.current) {
-            if (mode === 'prt') {
-                const celebrations = [0.6, 0.8, 1.0];
-                setSmileIntensity(celebrations[Math.floor(Math.random() * celebrations.length)]);
-            } else if (mode === 'prompting') {
-                setSmileIntensity(0.7);
-            } else if (mode !== 'assessment') {
-                setSmileIntensity(0.5);
-            }
-        } else if (!eyeContact && lastEyeContactRef.current) {
-            if (mode !== 'assessment') {
-                setSmileIntensity(0);
-            }
+            eyeContactStartTime.current = Date.now();
+            eyeContactLostTime.current = null;
+            
+            // Start debounce timer for smile
+            smileDebounceTimer.current = setTimeout(() => {
+                // Only smile if still maintaining eye contact
+                if (eyeContact) {
+                    if (mode === 'prt') {
+                        const celebrations = [0.6, 0.8, 1.0];
+                        setSmileIntensity(celebrations[Math.floor(Math.random() * celebrations.length)]);
+                    } else if (mode === 'prompting') {
+                        setSmileIntensity(0.7);
+                    } else if (mode !== 'assessment') {
+                        setSmileIntensity(0.5);
+                    }
+                }
+            }, SMILE_DEBOUNCE_TIME);
+        } 
+        // Eye contact lost
+        else if (!eyeContact && lastEyeContactRef.current) {
+            eyeContactLostTime.current = Date.now();
+            eyeContactStartTime.current = null;
+            
+            // Start debounce timer for neutral
+            smileDebounceTimer.current = setTimeout(() => {
+                // Only go neutral if still not looking
+                if (!eyeContact && mode !== 'assessment') {
+                    setSmileIntensity(0);
+                }
+            }, NEUTRAL_DEBOUNCE_TIME);
         }
         
         lastEyeContactRef.current = eyeContact;
+        
+        // Cleanup
+        return () => {
+            if (smileDebounceTimer.current) {
+                clearTimeout(smileDebounceTimer.current);
+            }
+        };
     }, [eyeContact, mode]);
 
     useFrame(() => {
         if (!scene) return;
 
-        // Get current mouth opening from lipSyncController
         const mouthOpen = lipSyncController.getMouthOpen();
 
         scene.traverse((child) => {
