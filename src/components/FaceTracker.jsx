@@ -6,6 +6,8 @@ import EducationEngine from './EducationEngine';
 import { lipSyncController } from '../utils/lip-sync-controller';
 import '../styles/FaceTracker.css';
 
+const EYE_CONTACT_DEBOUNCE = 1500; // Same as avatar smile debounce
+
 export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -18,6 +20,12 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     const [eyeContactCount, setEyeContactCount] = useState(0);
     const [startTime, setStartTime] = useState(null);
     const [sessionKey, setSessionKey] = useState(0);
+
+    // Debounce tracking
+    const eyeContactStartTime = useRef(null);
+    const eyeContactDebounceTimer = useRef(null);
+    const lastEyeContactValue = useRef(false);
+    const scoreAwarded = useRef(false);
 
     const modeNames = {
         assessment: 'Assessment Mode',
@@ -35,6 +43,12 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
 
     const handleStop = () => {
         console.log('🛑 IMMEDIATE STOP - Cancelling everything...');
+        
+        // Clear debounce timer
+        if (eyeContactDebounceTimer.current) {
+            clearTimeout(eyeContactDebounceTimer.current);
+            eyeContactDebounceTimer.current = null;
+        }
         
         // FIRST: Unmount EducationEngine immediately by changing key
         setSessionKey(prev => prev + 1);
@@ -58,8 +72,55 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
         setEyeContactCount(0);
         setStartTime(null);
         
+        // Reset debounce refs
+        eyeContactStartTime.current = null;
+        scoreAwarded.current = false;
+        lastEyeContactValue.current = false;
+        
         console.log('✅ Session completely stopped');
     };
+
+    // Debounced eye contact tracking for score
+    useEffect(() => {
+        if (!isTracking || mode !== 'prt') return;
+
+        if (eyeContact !== lastEyeContactValue.current) {
+            // Clear existing timer
+            if (eyeContactDebounceTimer.current) {
+                clearTimeout(eyeContactDebounceTimer.current);
+                eyeContactDebounceTimer.current = null;
+            }
+
+            if (eyeContact) {
+                // Eye contact started
+                eyeContactStartTime.current = Date.now();
+                scoreAwarded.current = false;
+                
+                // Wait for sustained eye contact
+                eyeContactDebounceTimer.current = setTimeout(() => {
+                    // Only award score if still maintaining eye contact
+                    if (eyeContact && !scoreAwarded.current) {
+                        setScore(prev => prev + 10);
+                        setEyeContactCount(prev => prev + 1);
+                        scoreAwarded.current = true;
+                        console.log('✅ Score +10 (sustained eye contact)');
+                    }
+                }, EYE_CONTACT_DEBOUNCE);
+            } else {
+                // Eye contact lost
+                eyeContactStartTime.current = null;
+                scoreAwarded.current = false;
+            }
+        }
+
+        lastEyeContactValue.current = eyeContact;
+
+        return () => {
+            if (eyeContactDebounceTimer.current) {
+                clearTimeout(eyeContactDebounceTimer.current);
+            }
+        };
+    }, [eyeContact, isTracking, mode]);
 
     useEffect(() => {
         if (!isTracking) return;
@@ -106,13 +167,6 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                 
                 const eyeCenterX = (leftEye.x + rightEye.x) / 2;
                 currentEyeContact = Math.abs(eyeCenterX - nose.x) < 0.05;
-
-                if (currentEyeContact && !lastEyeContact) {
-                    setEyeContactCount(prev => prev + 1);
-                    if (mode === 'prt') {
-                        setScore(prev => prev + 10);
-                    }
-                }
                 
                 lastEyeContact = currentEyeContact;
                 
