@@ -3,6 +3,7 @@ import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 import MorphTargetAvatar from './MorphTargetAvatar';
 import EducationEngine from './EducationEngine';
+import PromptingVisuals from './PromptingVisuals';
 import { lipSyncController } from '../utils/lip-sync-controller';
 import '../styles/FaceTracker.css';
 
@@ -180,6 +181,10 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
                 } else if (mode === 'prt') {
                     color = currentEyeContact ? '#FFD700' : '#4A90E2';
                     size = currentEyeContact ? 12 : 8;
+                } else if (mode === 'prompting') {
+                    // Prompting mode: Green = eye contact, Red = no eye contact
+                    color = currentEyeContact ? '#00ff00' : '#ff0000';
+                    size = currentEyeContact ? 10 : 8;
                 } else {
                     color = currentEyeContact ? '#00ff00' : '#4A90E2';
                 }
@@ -331,7 +336,17 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
                 {settings.showAvatar && (
                     <div className="avatar-section">
                         <h3>Avatar</h3>
-                        <MorphTargetAvatar eyeContact={eyeContact} mode={mode} />
+                        <div className="avatar-wrapper">
+                            <MorphTargetAvatar eyeContact={eyeContact} mode={mode} />
+                            
+                            {mode === 'prompting' && isTracking && !isPaused && (
+                                <PromptingVisuals 
+                                    hasEyeContact={eyeContact}
+                                    faceDetected={faceDetected}
+                                    isActive={true}
+                                />
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

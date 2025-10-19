@@ -1,0 +1,120 @@
+.prompting-visuals-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.arrow-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: pulse-arrow 1.5s ease-in-out infinite;
+}
+
+.arrow-pointer {
+    font-size: 4rem;
+    color: #FFD700;
+    text-shadow: 
+        0 0 10px rgba(255, 215, 0, 0.8),
+        0 0 20px rgba(255, 215, 0, 0.6),
+        0 0 30px rgba(255, 215, 0, 0.4),
+        2px 2px 4px rgba(0, 0, 0, 0.8);
+    animation: bounce-arrow 1s ease-in-out infinite;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+    font-weight: bold;
+}
+
+.arrow-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: white;
+    background: rgba(255, 87, 34, 0.95);
+    padding: 8px 16px;
+    border-radius: 25px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 16px rgba(255, 87, 34, 0.6);
+    white-space: nowrap;
+    border: 3px solid #FFD700;
+}
+
+.arrow-top-left {
+    top: 15%;
+    left: 15%;
+}
+
+.arrow-top-right {
+    top: 15%;
+    right: 15%;
+}
+
+.arrow-center {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes pulse-arrow {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.15);
+    }
+}
+
+@keyframes bounce-arrow {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+.arrow-top-left .arrow-pointer {
+    animation: bounce-diagonal-left 1s ease-in-out infinite;
+}
+
+.arrow-top-right .arrow-pointer {
+    animation: bounce-diagonal-right 1s ease-in-out infinite;
+}
+
+@keyframes bounce-diagonal-left {
+    0%, 100% {
+        transform: translate(0, 0);
+    }
+    50% {
+        transform: translate(15px, 15px);
+    }
+}
+
+@keyframes bounce-diagonal-right {
+    0%, 100% {
+        transform: translate(0, 0);
+    }
+    50% {
+        transform: translate(-15px, 15px);
+    }
+}
+
+@media (max-width: 768px) {
+    .arrow-pointer {
+        font-size: 3rem;
+    }
+    
+    .arrow-text {
+        font-size: 1rem;
+        padding: 6px 12px;
+    }
+}
