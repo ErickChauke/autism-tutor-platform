@@ -8,113 +8,280 @@
     height: 100%;
     pointer-events: none;
     z-index: 1000;
-    background: rgba(0, 0, 0, 0.1);
+    background: radial-gradient(
+        circle at center,
+        rgba(0, 0, 0, 0.3) 0%,
+        rgba(0, 0, 0, 0.1) 50%,
+        transparent 80%
+    );
+    animation: overlay-fade-in 0.5s ease-out;
 }
 
+@keyframes overlay-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Central focus circle - draws attention to center */
+.focus-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border: 4px dashed #FFD700;
+    border-radius: 50%;
+    animation: rotate-circle 8s linear infinite, pulse-circle 2s ease-in-out infinite;
+}
+
+@keyframes rotate-circle {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes pulse-circle {
+    0%, 100% {
+        width: 200px;
+        height: 200px;
+        opacity: 0.6;
+    }
+    50% {
+        width: 220px;
+        height: 220px;
+        opacity: 1;
+    }
+}
+
+/* Arrow containers with staggered animation */
 .arrow-container {
     position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    animation: pulse-arrow 1.5s ease-in-out infinite;
+    gap: 12px;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
 }
 
+/* Staggered entrance animation */
+.arrow-container.arrow-top {
+    top: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: slide-down 0.6s ease-out, float-vertical 2.5s ease-in-out infinite;
+}
+
+.arrow-container.arrow-left {
+    top: 50%;
+    left: 8%;
+    transform: translateY(-50%);
+    animation: slide-right 0.6s ease-out 0.2s both, float-horizontal 2.5s ease-in-out infinite;
+}
+
+.arrow-container.arrow-right {
+    top: 50%;
+    right: 8%;
+    transform: translateY(-50%);
+    animation: slide-left 0.6s ease-out 0.4s both, float-horizontal 2.5s ease-in-out infinite;
+}
+
+/* Entrance animations */
+@keyframes slide-down {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes slide-right {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+@keyframes slide-left {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+/* Floating animations */
+@keyframes float-vertical {
+    0%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    50% {
+        transform: translateX(-50%) translateY(15px);
+    }
+}
+
+@keyframes float-horizontal {
+    0%, 100% {
+        transform: translateY(-50%) translateX(0);
+    }
+    50% {
+        transform: translateY(-50%) translateX(10px);
+    }
+}
+
+/* Arrow pointers - beautiful gradients */
 .arrow-pointer {
-    font-size: 4rem;
-    color: #FFD700;
-    text-shadow: 
-        0 0 10px rgba(255, 215, 0, 0.8),
-        0 0 20px rgba(255, 215, 0, 0.6),
-        0 0 30px rgba(255, 215, 0, 0.4),
-        2px 2px 4px rgba(0, 0, 0, 0.8);
-    animation: bounce-arrow 1s ease-in-out infinite;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+    font-size: 5rem;
     font-weight: bold;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B35 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 4px 12px rgba(255, 215, 0, 0.6));
+    animation: glow-pulse 2s ease-in-out infinite;
+    line-height: 1;
 }
 
+@keyframes glow-pulse {
+    0%, 100% {
+        filter: drop-shadow(0 4px 12px rgba(255, 215, 0, 0.6));
+    }
+    50% {
+        filter: drop-shadow(0 8px 20px rgba(255, 165, 0, 0.9));
+    }
+}
+
+/* Text bubbles - modern glass morphism */
 .arrow-text {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     font-weight: 700;
     color: white;
-    background: rgba(255, 87, 34, 0.95);
-    padding: 8px 16px;
-    border-radius: 25px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    box-shadow: 0 4px 16px rgba(255, 87, 34, 0.6);
+    background: linear-gradient(135deg, 
+        rgba(255, 87, 34, 0.95) 0%, 
+        rgba(255, 152, 0, 0.95) 100%
+    );
+    padding: 12px 24px;
+    border-radius: 30px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 
+        0 8px 32px rgba(255, 87, 34, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 215, 0, 0.6);
     white-space: nowrap;
-    border: 3px solid #FFD700;
+    letter-spacing: 0.5px;
+    animation: text-shine 3s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
 }
 
-.arrow-top-left {
-    top: 15%;
-    left: 15%;
+.arrow-text::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 70%
+    );
+    animation: shine-sweep 3s ease-in-out infinite;
 }
 
-.arrow-top-right {
-    top: 15%;
-    right: 15%;
+@keyframes shine-sweep {
+    0% {
+        transform: translateX(-100%) translateY(-100%);
+    }
+    50%, 100% {
+        transform: translateX(100%) translateY(100%);
+    }
 }
 
-.arrow-center {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-@keyframes pulse-arrow {
+@keyframes text-shine {
     0%, 100% {
-        opacity: 1;
-        transform: scale(1);
+        box-shadow: 
+            0 8px 32px rgba(255, 87, 34, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
     50% {
-        opacity: 0.8;
-        transform: scale(1.15);
+        box-shadow: 
+            0 12px 48px rgba(255, 152, 0, 0.6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
 }
 
-@keyframes bounce-arrow {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-15px);
-    }
+/* Specific arrow styling */
+.arrow-top .arrow-pointer {
+    transform: rotate(0deg);
 }
 
-.arrow-top-left .arrow-pointer {
-    animation: bounce-diagonal-left 1s ease-in-out infinite;
+.arrow-left .arrow-pointer {
+    transform: rotate(0deg);
 }
 
-.arrow-top-right .arrow-pointer {
-    animation: bounce-diagonal-right 1s ease-in-out infinite;
+.arrow-right .arrow-pointer {
+    transform: rotate(0deg);
 }
 
-@keyframes bounce-diagonal-left {
-    0%, 100% {
-        transform: translate(0, 0);
-    }
-    50% {
-        transform: translate(15px, 15px);
-    }
-}
-
-@keyframes bounce-diagonal-right {
-    0%, 100% {
-        transform: translate(0, 0);
-    }
-    50% {
-        transform: translate(-15px, 15px);
-    }
-}
-
+/* Responsive design */
 @media (max-width: 768px) {
     .arrow-pointer {
-        font-size: 3rem;
+        font-size: 3.5rem;
     }
     
     .arrow-text {
         font-size: 1rem;
-        padding: 6px 12px;
+        padding: 10px 20px;
+    }
+    
+    .focus-circle {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .arrow-container.arrow-top {
+        top: 12%;
+    }
+    
+    .arrow-container.arrow-left {
+        left: 5%;
+    }
+    
+    .arrow-container.arrow-right {
+        right: 5%;
+    }
+}
+
+/* Accessibility - reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .prompting-visuals-overlay,
+    .arrow-container,
+    .arrow-pointer,
+    .arrow-text,
+    .focus-circle {
+        animation: none !important;
+    }
+    
+    .arrow-text::before {
+        display: none;
     }
 }
