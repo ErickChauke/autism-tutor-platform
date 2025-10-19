@@ -29,6 +29,12 @@ export default function SettingsScreen({ settings, onUpdateSettings, onBack }) {
             icon: ''
         },
         {
+            key: 'autoPlayTopics',
+            label: 'Auto-Play Topics',
+            description: 'Automatically select and play topics with transition messages',
+            icon: ''
+        },
+        {
             key: 'showSnippetProgress',
             label: 'Show Snippet Progress',
             description: 'Display detailed progress through educational snippets',
@@ -65,6 +71,12 @@ export default function SettingsScreen({ settings, onUpdateSettings, onBack }) {
                     <p><strong>Show Camera Feed:</strong> Controls whether you see the video on screen</p>
                     <p><strong>Enable Face Tracking:</strong> Controls whether face detection is running</p>
                     <p className="example">Example: Camera OFF + Tracking ON = Audio-only mode with detection still working</p>
+                </div>
+
+                <div className="settings-info-box" style={{ background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)', borderLeft: '4px solid #4caf50' }}>
+                    <h3>Auto-Play Mode</h3>
+                    <p><strong>Auto-Play Topics:</strong> When enabled, topics will automatically play one after another</p>
+                    <p className="example">After starting the session, the first topic begins in 5 seconds. When each topic completes, a transition message plays before moving to the next topic.</p>
                 </div>
 
                 <div className="settings-list">

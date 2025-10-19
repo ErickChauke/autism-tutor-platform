@@ -34,6 +34,24 @@ const ENCOURAGEMENT = [
     "Beautiful! Good eye contact!"
 ];
 
+const TRANSITION_MESSAGES = [
+    "Great achievement! You've done well so far. Keep it up. Now let's move into even more interesting learning.",
+    "Excellent work! You're making wonderful progress. Let's explore another fascinating topic together.",
+    "Amazing job! You're learning so much. Ready for the next adventure?",
+    "Fantastic! You completed that topic. Now let's discover something new and exciting.",
+    "Wonderful progress! You're doing great. Time to explore another interesting subject.",
+    "Outstanding! You're such a good learner. Let's continue with something else that's fun.",
+    "Beautiful work! I'm so proud of you. Now let's learn about something even more cool.",
+    "Perfect! You finished that topic beautifully. Ready to explore more knowledge together?"
+];
+
+const INITIAL_START_MESSAGE = [
+    "Welcome! Let's begin our learning journey together. I'll start teaching you shortly.",
+    "Hello! I'm excited to teach you today. We'll start our first topic in just a moment.",
+    "Great to see you! Let's get started with some amazing learning. First topic coming up.",
+    "Welcome to our lesson! I have wonderful things to teach you today. Let's begin shortly."
+];
+
 const educationalSnippets = {
     animals: [
         "Elephants are very smart animals that live in family groups and can remember things for many years.",
@@ -204,6 +222,7 @@ const EYE_CONTACT_DEBOUNCE = 1500;
 const SNIPPET_ADVANCE_DELAY = 100;
 const REPLAY_PAUSE_DURATION = 1000;
 const REPEATED_PROMPT_INTERVAL = 5000;
+const AUTOPLAY_INITIAL_DELAY = 5000;
 
 const log = (emoji, message, indent = 0) => {
     const prefix = '  '.repeat(indent);
@@ -262,6 +281,10 @@ export default function EducationEngine({
     const currentSpeechType = useRef(null);
     const isSpeaking = useRef(false);
 
+    // Auto-play refs
+    const autoPlayInitialized = useRef(false);
+    const autoPlayTimer = useRef(null);
+
     const sessionConfig = {
         quick: { maxTopics: 2, label: 'Quick' },
         standard: { maxTopics: 4, label: 'Standard' },
@@ -290,6 +313,41 @@ export default function EducationEngine({
         }
     }, []);
 
+    // Auto-Play: Initial start after 5 seconds
+    useEffect(() => {
+        if (!settings.autoPlayTopics || autoPlayInitialized.current || sessionTopics.length === 0) {
+            return;
+        }
+
+        log('🤖', 'Auto-play enabled - starting in 5 seconds...', 0);
+        autoPlayInitialized.current = true;
+
+        autoPlayTimer.current = setTimeout(() => {
+            const welcomeMsg = INITIAL_START_MESSAGE[Math.floor(Math.random() * INITIAL_START_MESSAGE.length)];
+            speakNow(welcomeMsg, 'autoplay-welcome');
+        }, AUTOPLAY_INITIAL_DELAY);
+
+        return () => {
+            if (autoPlayTimer.current) {
+                clearTimeout(autoPlayTimer.current);
+            }
+        };
+    }, [settings.autoPlayTopics, sessionTopics]);
+
+    // Auto-Play: Select next topic helper
+    const selectNextTopic = () => {
+        const availableTopics = sessionTopics.filter(t => !completedTopics.includes(t));
+        
+        if (availableTopics.length === 0) {
+            log('🎉', 'Auto-play complete - all topics finished!', 0);
+            return;
+        }
+
+        const nextTopic = availableTopics[0];
+        log('🤖', `Auto-play selecting: ${nextTopic}`, 0);
+        startSnippetContent(nextTopic);
+    };
+
     const handleSpeechEnd = (type) => {
         log('⏹️', `SPEECH ENDED: [${type}]`, 1);
         
@@ -304,6 +362,16 @@ export default function EducationEngine({
         if (type === 'encouragement' && activeSnippetTopicRef.current) {
             log('🎉', `Encouragement ended - calling handleEncouragementEnd()`, 2);
             handleEncouragementEnd();
+        }
+
+        if (type === 'transition' && settings.autoPlayTopics) {
+            log('🤖', 'Transition ended - selecting next topic', 1);
+            selectNextTopic();
+        }
+
+        if (type === 'autoplay-welcome' && settings.autoPlayTopics) {
+            log('🤖', 'Welcome message ended - starting first topic', 1);
+            selectNextTopic();
         }
     };
 
@@ -369,12 +437,28 @@ export default function EducationEngine({
             } else {
                 log('🎉', `ALL COMPLETE for ${activeSnippetTopicRef.current}!`, 2);
                 
-                setCompletedTopics(prev => [...prev, activeSnippetTopicRef.current]);
+                const completedTopic = activeSnippetTopicRef.current;
+                setCompletedTopics(prev => [...prev, completedTopic]);
                 
                 activeSnippetTopicRef.current = null;
                 snippetIndexRef.current = 0;
                 setActiveSnippetTopic(null);
                 setSnippetIndex(0);
+
+                // Auto-play: Play transition message before next topic
+                if (settings.autoPlayTopics) {
+                    const availableTopics = sessionTopics.filter(t => 
+                        !completedTopics.includes(t) && t !== completedTopic
+                    );
+                    
+                    if (availableTopics.length > 0) {
+                        log('🤖', 'Topic complete - playing transition message', 2);
+                        const transitionMsg = TRANSITION_MESSAGES[Math.floor(Math.random() * TRANSITION_MESSAGES.length)];
+                        speakNow(transitionMsg, 'transition');
+                    } else {
+                        log('🎉', 'Auto-play session complete!', 2);
+                    }
+                }
             }
         } else {
             log('⏸️', `Snippet ${snippetIndexRef.current + 1} was interrupted`, 2);
@@ -481,15 +565,44 @@ export default function EducationEngine({
 
     useEffect(() => {
         return () => {
+            // CRITICAL CLEANUP: Stop everything when component unmounts
+            console.log('🧹 EducationEngine unmounting - cleaning up ALL timers and speech');
+            
             if (debounceTimer.current) {
                 clearTimeout(debounceTimer.current);
+                debounceTimer.current = null;
             }
             if (snippetTimer.current) {
                 clearTimeout(snippetTimer.current);
+                snippetTimer.current = null;
             }
             if (repeatedPromptInterval.current) {
                 clearInterval(repeatedPromptInterval.current);
+                repeatedPromptInterval.current = null;
             }
+            if (autoPlayTimer.current) {
+                clearTimeout(autoPlayTimer.current);
+                autoPlayTimer.current = null;
+            }
+
+            // FORCE STOP all speech and lip sync
+            if (speechSynthRef.current) {
+                speechSynthRef.current.cancel();
+                console.log('✅ Force cancelled speech synthesis');
+            }
+            
+            lipSyncController.stop();
+            console.log('✅ Force stopped lip sync controller');
+
+            // Reset all refs
+            activeSnippetTopicRef.current = null;
+            snippetIndexRef.current = 0;
+            snippetWasInterruptedRef.current = false;
+            currentSpeechType.current = null;
+            isSpeaking.current = false;
+            autoPlayInitialized.current = false;
+            
+            console.log('✅ EducationEngine cleanup complete');
         };
     }, []);
 
@@ -519,6 +632,21 @@ export default function EducationEngine({
                     </div>
                 </>
             )}
+
+            {settings.autoPlayTopics && (
+                <div style={{ 
+                    background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)', 
+                    padding: '12px', 
+                    borderRadius: '8px', 
+                    marginBottom: '12px',
+                    textAlign: 'center',
+                    border: '2px solid #4caf50'
+                }}>
+                    <p style={{ margin: 0, color: '#2e7d32', fontWeight: '600' }}>
+                        Auto-Play Mode Active
+                    </p>
+                </div>
+            )}
             
             {settings.showTopicButtons && (
                 <div className="controls">
@@ -526,7 +654,7 @@ export default function EducationEngine({
                         <button 
                             key={topic}
                             onClick={() => generateContent(topic)} 
-                            disabled={activeSnippetTopic || !canSelectMore || completedTopics.includes(topic)}
+                            disabled={activeSnippetTopic || !canSelectMore || completedTopics.includes(topic) || settings.autoPlayTopics}
                             className={completedTopics.includes(topic) ? 'completed' : ''}
                         >
                             {topicEmojis[topic]} {topic.charAt(0).toUpperCase() + topic.slice(1)}
