@@ -4,17 +4,34 @@ import { lipSyncController } from '../utils/lip-sync-controller';
 import '../styles/EducationEngine.css';
 
 const ATTENTION_PROMPTS = [
-    "Hey, look at me!",
-    "Can you look at my eyes?",
-    "I'm over here!",
-    "Let's make eye contact!",
-    "Look at me, please!",
+    "Hey, look at me please!",
+    "Can you please look at my eyes?",
+    "Hey I am over here!",
+    "Let's make eye contact please!",
+    "Look at me, may I get your attention please!",
+    "Come on, look at me!",
+    "Wanna learn something interesting? I want to see your eyes!",
+    "Please look at my face!",
+    "Can you see me?",
+    "Look right here!",
+    "Eyes on me, please!",
+    "I am talking to you, look this way please!",
+    "Teacher is this way, let's focus!"
 ];
 
 const ENCOURAGEMENT = [
     "Great! You're back!",
     "Perfect! Thank you!",
     "Awesome! Good job!",
+    "Excellent work!",
+    "That's it! Well done!",
+    "Fantastic! You are doing it!",
+    "Nice! Keep it up!",
+    "Wonderful! Thank you!",
+    "Amazing! You're doing great!",
+    "Super! That's perfect!",
+    "Yes! Exactly right!",
+    "Beautiful! Good eye contact!"
 ];
 
 const educationalSnippets = {
@@ -186,7 +203,7 @@ const topicEmojis = {
 const EYE_CONTACT_DEBOUNCE = 1500;
 const SNIPPET_ADVANCE_DELAY = 100;
 const REPLAY_PAUSE_DURATION = 1000;
-const REPEATED_PROMPT_INTERVAL = 5000; // 5 seconds
+const REPEATED_PROMPT_INTERVAL = 5000;
 
 const log = (emoji, message, indent = 0) => {
     const prefix = '  '.repeat(indent);
@@ -411,7 +428,6 @@ export default function EducationEngine({
         const now = Date.now();
 
         if (hasEyeContact !== lastEyeContactValue.current) {
-            // Clear any existing timers
             if (debounceTimer.current) {
                 clearTimeout(debounceTimer.current);
                 debounceTimer.current = null;
@@ -422,22 +438,18 @@ export default function EducationEngine({
             }
 
             if (!hasEyeContact) {
-                // Eye contact lost
                 eyeContactLostTime.current = now;
                 
-                // Initial debounce timer
                 debounceTimer.current = setTimeout(() => {
                     if (activeSnippetTopicRef.current) {
                         snippetWasInterruptedRef.current = true;
                         setSnippetWasInterrupted(true);
                     }
                     
-                    // First prompt
                     const prompt = getRandomPrompt();
                     speakNow(prompt, 'attention');
                     lastPromptTime.current = Date.now();
                     
-                    // Start repeated prompts every 5 seconds
                     repeatedPromptInterval.current = setInterval(() => {
                         if (!hasEyeContact) {
                             log('🔁', 'Repeated engagement prompt (still looking away)', 1);
@@ -449,7 +461,6 @@ export default function EducationEngine({
                     
                 }, EYE_CONTACT_DEBOUNCE);
             } else {
-                // Eye contact regained
                 const timeAway = eyeContactLostTime.current 
                     ? (now - eyeContactLostTime.current) 
                     : 0;
