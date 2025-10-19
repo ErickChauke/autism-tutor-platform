@@ -16,7 +16,7 @@ function App() {
         showCamera: true,
         enableTracking: true,
         showAvatar: true,
-        autoPlayTopics: false,
+        autoPlayTopics: true,  // ✅ AUTO-PLAY ON BY DEFAULT
         showSnippetProgress: false,
         showTopicButtons: false,
         showStats: false,

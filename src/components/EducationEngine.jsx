@@ -249,7 +249,8 @@ export default function EducationEngine({
     faceDetected = false,
     voiceRemindersEnabled = true,
     sessionLength = 'standard',
-    settings = {}
+    settings = {},
+    isPaused = false
 }) {
     const [currentContent, setCurrentContent] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -264,6 +265,12 @@ export default function EducationEngine({
     const activeSnippetTopicRef = useRef(null);
     const snippetIndexRef = useRef(0);
     const snippetWasInterruptedRef = useRef(false);
+    
+    // Pause state preservation
+    const pausedTopic = useRef(null);
+    const pausedSnippetIndex = useRef(0);
+    const isPausedRef = useRef(false); // CRITICAL: Use ref for synchronous checks
+    const isDestroyedRef = useRef(false); // CRITICAL: Prevent callbacks after unmount
     
     const snippetTimer = useRef(null);
     const speechSynthRef = useRef(window.speechSynthesis);
@@ -313,9 +320,68 @@ export default function EducationEngine({
         }
     }, []);
 
+    // PAUSE HANDLING
+    useEffect(() => {
+        if (isPaused) {
+            log('⏸️', 'PAUSED - Saving state and stopping everything', 0);
+            
+            // CRITICAL: Set ref immediately for synchronous checks
+            isPausedRef.current = true;
+            
+            // Save current state
+            pausedTopic.current = activeSnippetTopicRef.current;
+            pausedSnippetIndex.current = snippetIndexRef.current;
+            
+            // Stop all speech and timers
+            if (speechSynthRef.current) {
+                speechSynthRef.current.cancel();
+            }
+            lipSyncController.stop();
+            
+            if (snippetTimer.current) {
+                clearTimeout(snippetTimer.current);
+            }
+            if (autoPlayTimer.current) {
+                clearTimeout(autoPlayTimer.current);
+            }
+            if (debounceTimer.current) {
+                clearTimeout(debounceTimer.current);
+            }
+            if (repeatedPromptInterval.current) {
+                clearInterval(repeatedPromptInterval.current);
+            }
+            
+            log('✅', `Saved: topic=${pausedTopic.current}, snippet=${pausedSnippetIndex.current}`, 1);
+        } else if (pausedTopic.current !== null) {
+            log('▶️', 'RESUMING - Restoring from saved state', 0);
+            
+            // CRITICAL: Clear ref immediately
+            isPausedRef.current = false;
+            
+            // Restore and replay current snippet
+            const topic = pausedTopic.current;
+            const index = pausedSnippetIndex.current;
+            
+            activeSnippetTopicRef.current = topic;
+            snippetIndexRef.current = index;
+            setActiveSnippetTopic(topic);
+            setSnippetIndex(index);
+            
+            const snippets = educationalSnippets[topic];
+            if (snippets && snippets[index]) {
+                log('▶️', `Replaying snippet ${index + 1} of ${topic}`, 1);
+                speakNow(snippets[index], 'educational');
+            }
+            
+            // Clear pause state
+            pausedTopic.current = null;
+            pausedSnippetIndex.current = 0;
+        }
+    }, [isPaused]);
+
     // Auto-Play: Initial start after 5 seconds
     useEffect(() => {
-        if (!settings.autoPlayTopics || autoPlayInitialized.current || sessionTopics.length === 0) {
+        if (!settings.autoPlayTopics || autoPlayInitialized.current || sessionTopics.length === 0 || isPausedRef.current) {
             return;
         }
 
@@ -332,11 +398,19 @@ export default function EducationEngine({
                 clearTimeout(autoPlayTimer.current);
             }
         };
-    }, [settings.autoPlayTopics, sessionTopics]);
+    }, [settings.autoPlayTopics, sessionTopics, isPaused]);
 
     // Auto-Play: Select next topic helper
     const selectNextTopic = () => {
+        if (isPausedRef.current) {
+            log('⏸️', 'Paused (ref check) - not selecting next topic', 0);
+            return;
+        }
+        
+        // CRITICAL FIX: Use completedTopics state, not just ref
         const availableTopics = sessionTopics.filter(t => !completedTopics.includes(t));
+        
+        log('🤖', `selectNextTopic - Available: ${availableTopics.join(', ')}, Completed: ${completedTopics.join(', ')}`, 0);
         
         if (availableTopics.length === 0) {
             log('🎉', 'Auto-play complete - all topics finished!', 0);
@@ -354,6 +428,12 @@ export default function EducationEngine({
         currentSpeechType.current = null;
         isSpeaking.current = false;
         
+        // CRITICAL: Check REF not state for immediate pause response
+        if (isPausedRef.current) {
+            log('⏸️', 'Paused (ref check) - ignoring speech end callback', 1);
+            return;
+        }
+        
         if (type === 'educational' && activeSnippetTopicRef.current) {
             log('📚', `Educational ended - calling handleSnippetEnd()`, 2);
             handleSnippetEnd();
@@ -364,18 +444,23 @@ export default function EducationEngine({
             handleEncouragementEnd();
         }
 
-        if (type === 'transition' && settings.autoPlayTopics) {
+        if (type === 'transition' && settings.autoPlayTopics && !isPausedRef.current) {
             log('🤖', 'Transition ended - selecting next topic', 1);
             selectNextTopic();
         }
 
-        if (type === 'autoplay-welcome' && settings.autoPlayTopics) {
+        if (type === 'autoplay-welcome' && settings.autoPlayTopics && !isPausedRef.current) {
             log('🤖', 'Welcome message ended - starting first topic', 1);
             selectNextTopic();
         }
     };
 
     const speakNow = (text, type = 'normal') => {
+        if (isPausedRef.current) {
+            log('⏸️', 'Paused (ref check) - skipping speech', 0);
+            return;
+        }
+        
         const preview = text.substring(0, 40) + (text.length > 40 ? '...' : '');
         log('🔊', `SPEAK: [${type}] "${preview}"`, 0);
         
@@ -416,7 +501,13 @@ export default function EducationEngine({
     };
 
     const handleSnippetEnd = () => {
-        log('📚', `handleSnippetEnd() - index=${snippetIndexRef.current}`, 1);
+        log('📚', `handleSnippetEnd() - index=${snippetIndexRef.current}, paused=${isPausedRef.current}`, 1);
+        
+        // CRITICAL: Check pause FIRST before anything else
+        if (isPausedRef.current) {
+            log('⏸️', 'Paused - aborting handleSnippetEnd()', 2);
+            return;
+        }
         
         if (!activeSnippetTopicRef.current) return;
         
@@ -446,10 +537,13 @@ export default function EducationEngine({
                 setSnippetIndex(0);
 
                 // Auto-play: Play transition message before next topic
-                if (settings.autoPlayTopics) {
+                if (settings.autoPlayTopics && !isPausedRef.current) {
+                    // FIX: Filter out already completed topic from available topics
                     const availableTopics = sessionTopics.filter(t => 
                         !completedTopics.includes(t) && t !== completedTopic
                     );
+                    
+                    log('🤖', `Available topics after ${completedTopic}: ${availableTopics.join(', ')}`, 2);
                     
                     if (availableTopics.length > 0) {
                         log('🤖', 'Topic complete - playing transition message', 2);
@@ -466,7 +560,13 @@ export default function EducationEngine({
     };
 
     const handleEncouragementEnd = () => {
-        log('🎉', `handleEncouragementEnd()`, 1);
+        log('🎉', `handleEncouragementEnd() - paused=${isPausedRef.current}`, 1);
+        
+        // CRITICAL: Check pause FIRST
+        if (isPausedRef.current) {
+            log('⏸️', 'Paused - aborting handleEncouragementEnd()', 2);
+            return;
+        }
         
         if (!activeSnippetTopicRef.current) return;
         
@@ -484,6 +584,8 @@ export default function EducationEngine({
     };
 
     const startSnippetContent = (topic) => {
+        if (isPausedRef.current) return;
+        
         log('📚', `startSnippetContent() - topic=${topic}`, 0);
         
         const snippets = educationalSnippets[topic];
@@ -506,7 +608,7 @@ export default function EducationEngine({
     };
 
     useEffect(() => {
-        if (!voiceRemindersEnabled || mode === 'assessment' || mode === 'research') {
+        if (!voiceRemindersEnabled || mode === 'assessment' || mode === 'research' || isPausedRef.current) {
             return;
         }
 
@@ -536,7 +638,7 @@ export default function EducationEngine({
                     lastPromptTime.current = Date.now();
                     
                     repeatedPromptInterval.current = setInterval(() => {
-                        if (!hasEyeContact) {
+                        if (!hasEyeContact && !isPausedRef.current) {
                             log('🔁', 'Repeated engagement prompt (still looking away)', 1);
                             const nextPrompt = getRandomPrompt();
                             speakNow(nextPrompt, 'attention');
@@ -561,7 +663,7 @@ export default function EducationEngine({
 
         lastEyeContactValue.current = hasEyeContact;
         
-    }, [hasEyeContact, voiceRemindersEnabled, mode]);
+    }, [hasEyeContact, voiceRemindersEnabled, mode, isPaused]);
 
     useEffect(() => {
         return () => {
@@ -601,19 +703,37 @@ export default function EducationEngine({
             currentSpeechType.current = null;
             isSpeaking.current = false;
             autoPlayInitialized.current = false;
+            pausedTopic.current = null;
+            pausedSnippetIndex.current = 0;
+            isPausedRef.current = false; // Reset pause ref
             
             console.log('✅ EducationEngine cleanup complete');
         };
     }, []);
 
     const generateContent = async (topic) => {
-        if (isGenerating || !canSelectMore || completedTopics.includes(topic)) return;
+        if (isGenerating || !canSelectMore || completedTopics.includes(topic) || isPausedRef.current) return;
         log('🎯', `Button clicked: ${topic}`, 0);
         startSnippetContent(topic);
     };
 
     return (
         <div className="education-engine">
+            {isPaused && (
+                <div style={{ 
+                    background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)', 
+                    padding: '12px', 
+                    borderRadius: '8px', 
+                    marginBottom: '12px',
+                    textAlign: 'center',
+                    border: '2px solid #ff9800'
+                }}>
+                    <p style={{ margin: 0, color: '#e65100', fontWeight: '600' }}>
+                        Session Paused
+                    </p>
+                </div>
+            )}
+
             {settings.showSnippetProgress && (
                 <>
                     <div className="ai-status">
@@ -633,28 +753,13 @@ export default function EducationEngine({
                 </>
             )}
 
-            {settings.autoPlayTopics && (
-                <div style={{ 
-                    background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)', 
-                    padding: '12px', 
-                    borderRadius: '8px', 
-                    marginBottom: '12px',
-                    textAlign: 'center',
-                    border: '2px solid #4caf50'
-                }}>
-                    <p style={{ margin: 0, color: '#2e7d32', fontWeight: '600' }}>
-                        Auto-Play Mode Active
-                    </p>
-                </div>
-            )}
-            
             {settings.showTopicButtons && (
                 <div className="controls">
                     {sessionTopics.map(topic => (
                         <button 
                             key={topic}
                             onClick={() => generateContent(topic)} 
-                            disabled={activeSnippetTopic || !canSelectMore || completedTopics.includes(topic) || settings.autoPlayTopics}
+                            disabled={activeSnippetTopic || !canSelectMore || completedTopics.includes(topic) || settings.autoPlayTopics || isPaused}
                             className={completedTopics.includes(topic) ? 'completed' : ''}
                         >
                             {topicEmojis[topic]} {topic.charAt(0).toUpperCase() + topic.slice(1)}

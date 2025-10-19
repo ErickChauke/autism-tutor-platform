@@ -13,6 +13,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
     const canvasRef = useRef(null);
     
     const [isTracking, setIsTracking] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
     const [faceDetected, setFaceDetected] = useState(false);
     const [eyeContact, setEyeContact] = useState(false);
     
@@ -59,6 +60,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
         console.log('✅ Lip sync stopped');
         
         setIsTracking(false);
+        setIsPaused(false);
         setFaceDetected(false);
         setEyeContact(false);
         setScore(0);
@@ -70,6 +72,16 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
         lastEyeContactValue.current = false;
         
         console.log('✅ Session completely stopped');
+    };
+
+    const handlePause = () => {
+        console.log('⏸️ PAUSE - Pausing session...');
+        setIsPaused(true);
+    };
+
+    const handleResume = () => {
+        console.log('▶️ RESUME - Resuming session...');
+        setIsPaused(false);
     };
 
     useEffect(() => {
@@ -109,7 +121,6 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
     }, [eyeContact, isTracking, mode]);
 
     useEffect(() => {
-        // Don't run tracking if disabled in settings OR if not started
         if (!isTracking || !settings.enableTracking) {
             console.log('⏸️ Tracking disabled or not started');
             return;
@@ -240,22 +251,43 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
                                 Start
                             </button>
                         ) : (
-                            <button 
-                                onClick={handleStop}
-                                className="main-control-button stop-button"
-                            >
-                                Stop Session
-                            </button>
+                            <>
+                                <div className="control-buttons-row">
+                                    {!isPaused ? (
+                                        <button 
+                                            onClick={handlePause}
+                                            className="control-button pause-button"
+                                        >
+                                            Pause
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={handleResume}
+                                            className="control-button resume-button"
+                                        >
+                                            Resume
+                                        </button>
+                                    )}
+                                    <button 
+                                        onClick={handleStop}
+                                        className="control-button stop-button"
+                                    >
+                                        Stop
+                                    </button>
+                                </div>
+                            </>
                         )}
                         
                         <div className="status-display">
-                            {isTracking ? (
-                                settings.enableTracking ? (
-                                    faceDetected ? (
-                                        eyeContact ? '✓ Eye Contact' : '○ Face Detected'
-                                    ) : '✗ No Face'
-                                ) : '⏸️ Tracking Disabled'
-                            ) : 'Ready'}
+                            {isPaused ? '⏸️ Paused' : 
+                                isTracking ? (
+                                    settings.enableTracking ? (
+                                        faceDetected ? (
+                                            eyeContact ? '✓ Eye Contact' : '○ Face Detected'
+                                        ) : '✗ No Face'
+                                    ) : '⏸️ Tracking Disabled'
+                                ) : 'Ready'
+                            }
                         </div>
 
                         {isTracking && mode === 'prt' && settings.showStats && (
@@ -290,6 +322,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
                                 voiceRemindersEnabled={settings.voiceReminders}
                                 sessionLength={sessionLength}
                                 settings={settings}
+                                isPaused={isPaused}
                             />
                         </div>
                     )}
