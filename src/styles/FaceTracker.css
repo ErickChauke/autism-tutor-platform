@@ -141,55 +141,118 @@
     color: var(--text-light);
 }
 
-/* Education Section Styling */
+/* CRITICAL FIX: Education Section - Remove white box */
 .education-section {
-    margin-top: var(--spacing-lg);
+    margin-top: 0;
+    padding: 0;
 }
 
 .education-section h3 {
     color: var(--primary-blue);
-    margin-bottom: var(--spacing-md);
-    text-align: center;
-    font-size: 1.2rem;
+    margin-bottom: var(--spacing-sm);
+    font-size: 1.1rem;
 }
 
-/* Attention Prompts Toggle */
-.prompt-toggle {
-    margin-top: var(--spacing-md);
+.speech-toggle {
+    margin-top: var(--spacing-sm);
     padding: var(--spacing-sm);
-    background: var(--white);
+    background: var(--soft-gray);
     border-radius: var(--border-radius);
-    text-align: left;
 }
 
-.prompt-toggle label {
+.speech-toggle label {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     cursor: pointer;
-    font-size: 0.95rem;
+}
+
+.milestone-info {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 8px;
+}
+
+.stop-button {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+}
+
+.stop-button:hover {
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%) !important;
+}
+
+.start-button {
+    background: linear-gradient(135deg, var(--soft-green) 0%, var(--accent-teal) 100%) !important;
+}
+
+.camera-hidden-notice,
+.tracking-disabled-notice {
+    background: var(--cream);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+    border-left: 4px solid var(--accent-teal);
+}
+
+.camera-hidden-notice p,
+.tracking-disabled-notice p {
+    margin: 0;
     color: var(--text-dark);
-}
-
-.prompt-toggle input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: var(--primary-blue);
-}
-
-.prompt-toggle span {
+    font-size: 1rem;
     font-weight: 500;
 }
 
-.prompt-info {
-    margin-top: 6px;
-    font-size: 0.85rem;
-    color: var(--text-light);
-    text-align: center;
+.control-buttons-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
 }
 
-/* Enhanced Controls */
+.control-button {
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.pause-button {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+}
+
+.pause-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 152, 0, 0.3);
+}
+
+.resume-button {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+    color: white;
+}
+
+.resume-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
+}
+
+.control-button.stop-button {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: white;
+}
+
+.control-button.stop-button:hover {
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(244, 67, 54, 0.3);
+}
+
 .main-control-button {
     width: 100%;
     padding: 16px;
@@ -244,7 +307,6 @@
     margin-top: 8px;
 }
 
-/* Stop button styling */
 .stop-button {
     background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
 }
@@ -275,111 +337,6 @@
     font-weight: 500;
 }
 
-.camera-hidden-notice,
-.tracking-disabled-notice {
-    background: var(--cream);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius);
-    margin-bottom: var(--spacing-md);
-    text-align: center;
-    border-left: 4px solid var(--accent-teal);
-}
-
-.camera-hidden-notice p,
-.tracking-disabled-notice p {
-    margin: 0;
-    color: var(--text-dark);
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-.camera-hidden-notice,
-.tracking-disabled-notice {
-    background: var(--cream);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius);
-    margin-bottom: var(--spacing-md);
-    text-align: center;
-    border-left: 4px solid var(--accent-teal);
-}
-
-.camera-hidden-notice p,
-.tracking-disabled-notice p {
-    margin: 0;
-    color: var(--text-dark);
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-.camera-hidden-notice,
-.tracking-disabled-notice {
-    background: var(--cream);
-    padding: var(--spacing-md);
-    border-radius: var(--border-radius);
-    margin-bottom: var(--spacing-md);
-    text-align: center;
-    border-left: 4px solid var(--accent-teal);
-}
-
-.camera-hidden-notice p,
-.tracking-disabled-notice p {
-    margin: 0;
-    color: var(--text-dark);
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-/* Control Buttons Row */
-.control-buttons-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
-}
-
-.control-button {
-    padding: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.pause-button {
-    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-    color: white;
-}
-
-.pause-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(255, 152, 0, 0.3);
-}
-
-.resume-button {
-    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
-    color: white;
-}
-
-.resume-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
-}
-
-.control-button.stop-button {
-    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-    color: white;
-}
-
-.control-button.stop-button:hover {
-    background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(244, 67, 54, 0.3);
-}
-
-/* Control Buttons Row */
 .control-buttons-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
