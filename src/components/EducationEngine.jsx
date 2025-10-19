@@ -229,7 +229,8 @@ export default function EducationEngine({
     hasEyeContact = false,
     faceDetected = false,
     voiceRemindersEnabled = true,
-    sessionLength = 'standard'
+    sessionLength = 'standard',
+    settings = {}
 }) {
     const [currentContent, setCurrentContent] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -500,34 +501,40 @@ export default function EducationEngine({
 
     return (
         <div className="education-engine">
-            <div className="ai-status">
-                <span className="status-badge" style={{ background: '#673ab7', color: 'white' }}>
-                    {config.label}
-                </span>
-                <span className="status-badge" style={{ background: '#ff9800', color: 'white', marginLeft: '8px' }}>
-                    {completedTopics.length} / {config.maxTopics}
-                </span>
-                {activeSnippetTopic && (
-                    <span className="status-badge" style={{ background: '#9c27b0', color: 'white', marginLeft: '8px' }}>
-                        {activeSnippetTopic.toUpperCase()} {snippetIndex + 1}/{educationalSnippets[activeSnippetTopic].length}
-                        {snippetWasInterrupted && ' 🔄'}
-                    </span>
-                )}
-            </div>
+            {settings.showSnippetProgress && (
+                <>
+                    <div className="ai-status">
+                        <span className="status-badge" style={{ background: '#673ab7', color: 'white' }}>
+                            {config.label}
+                        </span>
+                        <span className="status-badge" style={{ background: '#ff9800', color: 'white', marginLeft: '8px' }}>
+                            {completedTopics.length} / {config.maxTopics}
+                        </span>
+                        {activeSnippetTopic && (
+                            <span className="status-badge" style={{ background: '#9c27b0', color: 'white', marginLeft: '8px' }}>
+                                {activeSnippetTopic.toUpperCase()} {snippetIndex + 1}/{educationalSnippets[activeSnippetTopic].length}
+                                {snippetWasInterrupted && ' 🔄'}
+                            </span>
+                        )}
+                    </div>
+                </>
+            )}
             
-            <div className="controls">
-                {sessionTopics.map(topic => (
-                    <button 
-                        key={topic}
-                        onClick={() => generateContent(topic)} 
-                        disabled={activeSnippetTopic || !canSelectMore || completedTopics.includes(topic)}
-                        className={completedTopics.includes(topic) ? 'completed' : ''}
-                    >
-                        {topicEmojis[topic]} {topic.charAt(0).toUpperCase() + topic.slice(1)}
-                        {completedTopics.includes(topic) && ' ✅'}
-                    </button>
-                ))}
-            </div>
+            {settings.showTopicButtons && (
+                <div className="controls">
+                    {sessionTopics.map(topic => (
+                        <button 
+                            key={topic}
+                            onClick={() => generateContent(topic)} 
+                            disabled={activeSnippetTopic || !canSelectMore || completedTopics.includes(topic)}
+                            className={completedTopics.includes(topic) ? 'completed' : ''}
+                        >
+                            {topicEmojis[topic]} {topic.charAt(0).toUpperCase() + topic.slice(1)}
+                            {completedTopics.includes(topic) && ' ✅'}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {!canSelectMore && !activeSnippetTopic && (
                 <div style={{ 
@@ -539,11 +546,11 @@ export default function EducationEngine({
                     textAlign: 'center',
                     fontWeight: 'bold'
                 }}>
-                    🎉 Session Complete!
+                    Session Complete!
                 </div>
             )}
 
-            {activeSnippetTopic && (
+            {activeSnippetTopic && settings.showSnippetProgress && (
                 <div style={{ 
                     background: '#e3f2fd', 
                     padding: '12px', 

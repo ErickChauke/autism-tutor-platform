@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Header from './components/Header';
 import WelcomeScreen from './components/WelcomeScreen';
 import FaceTracker from './components/FaceTracker';
+import SettingsScreen from './components/SettingsScreen';
 import './styles/autism-friendly.css';
 import './App.css';
 
@@ -9,6 +10,17 @@ function App() {
     const [currentScreen, setCurrentScreen] = useState('welcome');
     const [selectedMode, setSelectedMode] = useState('');
     const [selectedSession, setSelectedSession] = useState('');
+    
+    // Settings state with defaults
+    const [settings, setSettings] = useState({
+        showCamera: true,
+        enableTracking: true,
+        showAvatar: true,
+        showSnippetProgress: false,
+        showTopicButtons: false,
+        showStats: false,
+        voiceReminders: true
+    });
 
     const handleStart = (mode, session) => {
         setSelectedMode(mode);
@@ -22,11 +34,25 @@ function App() {
         setSelectedSession('');
     };
 
+    const handleOpenSettings = () => {
+        setCurrentScreen('settings');
+    };
+
+    const handleBackToTracker = () => {
+        setCurrentScreen('tracker');
+    };
+
+    const handleUpdateSettings = (newSettings) => {
+        setSettings(newSettings);
+    };
+
     return (
         <div className="App">
             <Header 
                 showBackButton={currentScreen !== 'welcome'} 
-                onBackClick={handleBackToWelcome}
+                onBackClick={currentScreen === 'settings' ? handleBackToTracker : handleBackToWelcome}
+                showSettingsButton={currentScreen === 'tracker'}
+                onSettingsClick={handleOpenSettings}
             />
             
             {currentScreen === 'welcome' && (
@@ -37,7 +63,16 @@ function App() {
                 <FaceTracker 
                     mode={selectedMode} 
                     sessionLength={selectedSession}
-                    onBack={handleBackToWelcome} 
+                    onBack={handleBackToWelcome}
+                    settings={settings}
+                />
+            )}
+
+            {currentScreen === 'settings' && (
+                <SettingsScreen
+                    settings={settings}
+                    onUpdateSettings={handleUpdateSettings}
+                    onBack={handleBackToTracker}
                 />
             )}
         </div>

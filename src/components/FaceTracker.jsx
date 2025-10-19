@@ -6,9 +6,9 @@ import EducationEngine from './EducationEngine';
 import { lipSyncController } from '../utils/lip-sync-controller';
 import '../styles/FaceTracker.css';
 
-const EYE_CONTACT_DEBOUNCE = 1500; // Same as avatar smile debounce
+const EYE_CONTACT_DEBOUNCE = 1500;
 
-export default function FaceTracker({ mode, sessionLength = 'standard' }) {
+export default function FaceTracker({ mode, sessionLength = 'standard', settings }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     
@@ -21,7 +21,6 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     const [startTime, setStartTime] = useState(null);
     const [sessionKey, setSessionKey] = useState(0);
 
-    // Debounce tracking
     const eyeContactStartTime = useRef(null);
     const eyeContactDebounceTimer = useRef(null);
     const lastEyeContactValue = useRef(false);
@@ -44,16 +43,13 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     const handleStop = () => {
         console.log('🛑 IMMEDIATE STOP - Cancelling everything...');
         
-        // Clear debounce timer
         if (eyeContactDebounceTimer.current) {
             clearTimeout(eyeContactDebounceTimer.current);
             eyeContactDebounceTimer.current = null;
         }
         
-        // FIRST: Unmount EducationEngine immediately by changing key
         setSessionKey(prev => prev + 1);
         
-        // THEN: Stop all speech and lip sync
         if (window.speechSynthesis) {
             window.speechSynthesis.cancel();
             console.log('✅ Speech cancelled');
@@ -62,17 +58,13 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
         lipSyncController.stop();
         console.log('✅ Lip sync stopped');
         
-        // THEN: Stop tracking
         setIsTracking(false);
-        
-        // FINALLY: Reset all state
         setFaceDetected(false);
         setEyeContact(false);
         setScore(0);
         setEyeContactCount(0);
         setStartTime(null);
         
-        // Reset debounce refs
         eyeContactStartTime.current = null;
         scoreAwarded.current = false;
         lastEyeContactValue.current = false;
@@ -80,25 +72,20 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
         console.log('✅ Session completely stopped');
     };
 
-    // Debounced eye contact tracking for score
     useEffect(() => {
         if (!isTracking || mode !== 'prt') return;
 
         if (eyeContact !== lastEyeContactValue.current) {
-            // Clear existing timer
             if (eyeContactDebounceTimer.current) {
                 clearTimeout(eyeContactDebounceTimer.current);
                 eyeContactDebounceTimer.current = null;
             }
 
             if (eyeContact) {
-                // Eye contact started
                 eyeContactStartTime.current = Date.now();
                 scoreAwarded.current = false;
                 
-                // Wait for sustained eye contact
                 eyeContactDebounceTimer.current = setTimeout(() => {
-                    // Only award score if still maintaining eye contact
                     if (eyeContact && !scoreAwarded.current) {
                         setScore(prev => prev + 10);
                         setEyeContactCount(prev => prev + 1);
@@ -107,7 +94,6 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                     }
                 }, EYE_CONTACT_DEBOUNCE);
             } else {
-                // Eye contact lost
                 eyeContactStartTime.current = null;
                 scoreAwarded.current = false;
             }
@@ -123,8 +109,13 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
     }, [eyeContact, isTracking, mode]);
 
     useEffect(() => {
-        if (!isTracking) return;
+        // Don't run tracking if disabled in settings OR if not started
+        if (!isTracking || !settings.enableTracking) {
+            console.log('⏸️ Tracking disabled or not started');
+            return;
+        }
 
+        console.log('▶️ Starting face tracking...');
         setStartTime(Date.now());
         let lastEyeContact = false;
 
@@ -214,7 +205,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                 cameraInstance.stop();
             }
         };
-    }, [isTracking, mode]);
+    }, [isTracking, mode, settings.enableTracking]);
 
     const getDuration = () => {
         if (!startTime) return 0;
@@ -230,11 +221,15 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
             
             <div className="tracking-layout">
                 <div className="tracking-section">
-                    <h3>Camera</h3>
-                    <div className="video-container">
-                        <video ref={videoRef} style={{ display: 'none' }} />
-                        <canvas ref={canvasRef} />
-                    </div>
+                    {settings.showCamera && (
+                        <>
+                            <h3>Camera</h3>
+                            <div className="video-container">
+                                <video ref={videoRef} style={{ display: 'none' }} />
+                                <canvas ref={canvasRef} />
+                            </div>
+                        </>
+                    )}
                     
                     <div className="controls">
                         {!isTracking ? (
@@ -255,13 +250,15 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                         
                         <div className="status-display">
                             {isTracking ? (
-                                faceDetected ? (
-                                    eyeContact ? '✓ Eye Contact' : '○ Face Detected'
-                                ) : '✗ No Face'
+                                settings.enableTracking ? (
+                                    faceDetected ? (
+                                        eyeContact ? '✓ Eye Contact' : '○ Face Detected'
+                                    ) : '✗ No Face'
+                                ) : '⏸️ Tracking Disabled'
                             ) : 'Ready'}
                         </div>
 
-                        {isTracking && mode === 'prt' && (
+                        {isTracking && mode === 'prt' && settings.showStats && (
                             <div className="prt-stats">
                                 <div className="stat">
                                     <span className="stat-label">Score</span>
@@ -274,7 +271,7 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                             </div>
                         )}
 
-                        {isTracking && (mode === 'assessment' || mode === 'research') && (
+                        {isTracking && (mode === 'assessment' || mode === 'research') && settings.showStats && (
                             <div className="session-stats">
                                 <p>Events: {eyeContactCount}</p>
                                 <p>Duration: {getDuration()}s</p>
@@ -290,17 +287,20 @@ export default function FaceTracker({ mode, sessionLength = 'standard' }) {
                                 mode={mode}
                                 hasEyeContact={eyeContact}
                                 faceDetected={faceDetected}
-                                voiceRemindersEnabled={true}
+                                voiceRemindersEnabled={settings.voiceReminders}
                                 sessionLength={sessionLength}
+                                settings={settings}
                             />
                         </div>
                     )}
                 </div>
 
-                <div className="avatar-section">
-                    <h3>Avatar</h3>
-                    <MorphTargetAvatar eyeContact={eyeContact} mode={mode} />
-                </div>
+                {settings.showAvatar && (
+                    <div className="avatar-section">
+                        <h3>Avatar</h3>
+                        <MorphTargetAvatar eyeContact={eyeContact} mode={mode} />
+                    </div>
+                )}
             </div>
         </div>
     );
