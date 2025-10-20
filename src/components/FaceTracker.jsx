@@ -19,6 +19,8 @@ export default function FaceTracker({
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const cameraInstanceRef = useRef(null);
+    const faceMeshInstanceRef = useRef(null);
+    const isProcessingFrameRef = useRef(false);
     
     const [isTracking, setIsTracking] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
@@ -60,6 +62,10 @@ export default function FaceTracker({
                 console.error('❌ Error stopping camera:', error);
             }
         }
+        
+        // Also clear FaceMesh reference
+        faceMeshInstanceRef.current = null;
+        isProcessingFrameRef.current = false;
     };
 
     const cleanupEverything = () => {
@@ -87,7 +93,7 @@ export default function FaceTracker({
         }
     }, [externalPause]);
 
-    // CRITICAL: Handle enableTracking setting changes
+    // Handle enableTracking setting changes
     useEffect(() => {
         if (isTracking && !settings.enableTracking) {
             console.log('⚠️ Tracking disabled via settings - cleaning up camera');
@@ -176,7 +182,7 @@ export default function FaceTracker({
         };
     }, [eyeContact, isTracking, mode]);
 
-    // Main tracking effect - only depends on isTracking and enableTracking
+    // Main tracking effect
     useEffect(() => {
         if (!isTracking || !settings.enableTracking) {
             return;
@@ -196,21 +202,48 @@ export default function FaceTracker({
             minTrackingConfidence: 0.5
         });
 
+        // Store FaceMesh instance
+        faceMeshInstanceRef.current = faceMesh;
+
         faceMesh.onResults((results) => {
+            // CRITICAL: Skip processing if paused or component unmounting
+            if (isPaused || !faceMeshInstanceRef.current) {
+                return;
+            }
+
             const canvas = canvasRef.current;
             const video = videoRef.current;
             
+            // Safety checks
             if (!canvas || !video) {
                 return;
             }
 
+            // CRITICAL: Validate dimensions before processing
+            if (video.videoWidth === 0 || video.videoHeight === 0) {
+                console.warn('⚠️ Video has zero dimensions, skipping frame');
+                return;
+            }
+
             const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            
+            // Set canvas dimensions if needed
+            if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            }
 
             ctx.save();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+            
+            // CRITICAL: Wrap draw in try-catch
+            try {
+                ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+            } catch (error) {
+                console.warn('⚠️ Draw error (skipping frame):', error.message);
+                ctx.restore();
+                return;
+            }
 
             let currentFaceDetected = false;
             let currentEyeContact = false;
@@ -258,8 +291,31 @@ export default function FaceTracker({
         if (videoRef.current) {
             const camera = new Camera(videoRef.current, {
                 onFrame: async () => {
-                    if (videoRef.current) {
-                        await faceMesh.send({ image: videoRef.current });
+                    // CRITICAL: Validate before sending to MediaPipe
+                    const video = videoRef.current;
+                    
+                    // Skip if paused or video invalid
+                    if (isPaused || !video || !faceMeshInstanceRef.current) {
+                        return;
+                    }
+
+                    // Skip if video has no dimensions
+                    if (video.videoWidth === 0 || video.videoHeight === 0) {
+                        return;
+                    }
+
+                    // Skip if already processing
+                    if (isProcessingFrameRef.current) {
+                        return;
+                    }
+
+                    try {
+                        isProcessingFrameRef.current = true;
+                        await faceMesh.send({ image: video });
+                    } catch (error) {
+                        console.warn('⚠️ MediaPipe send error (skipping frame):', error.message);
+                    } finally {
+                        isProcessingFrameRef.current = false;
                     }
                 },
                 width: 640,
@@ -275,7 +331,7 @@ export default function FaceTracker({
             console.log('🧹 Tracking effect cleanup');
             cleanupCamera();
         };
-    }, [isTracking, settings.enableTracking, mode]);
+    }, [isTracking, settings.enableTracking, mode, isPaused]);
 
     const getDuration = () => {
         if (!startTime) return 0;
@@ -291,22 +347,60 @@ export default function FaceTracker({
             
             <div className="tracking-layout">
                 <div className="tracking-section">
-                    {/* CRITICAL: Camera display - always keep elements in DOM */}
-                    {/* Just toggle visibility, not mounting/unmounting */}
-                    <div style={{ display: settings.showCamera ? 'block' : 'none' }}>
-                        <h3>Camera</h3>
-                        <div className="video-container">
-                            <video ref={videoRef} style={{ display: 'none' }} />
-                            <canvas ref={canvasRef} />
+                    {/* Camera display section - stable rendering */}
+                    {settings.showCamera ? (
+                        <div>
+                            <h3>Camera</h3>
+                            <div className="video-container">
+                                <video 
+                                    ref={videoRef} 
+                                    style={{ display: 'none' }}
+                                    width="640"
+                                    height="480"
+                                />
+                                <canvas 
+                                    ref={canvasRef}
+                                    width="640"
+                                    height="480"
+                                />
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Hidden elements when camera display is off */}
-                    {!settings.showCamera && (
-                        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                            <video ref={videoRef} style={{ display: 'none' }} />
-                            <canvas ref={canvasRef} width="640" height="480" />
-                        </div>
+                    ) : (
+                        <>
+                            {/* Hidden video/canvas with fixed dimensions */}
+                            <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                                <video 
+                                    ref={videoRef} 
+                                    style={{ display: 'block' }}
+                                    width="640"
+                                    height="480"
+                                />
+                                <canvas 
+                                    ref={canvasRef}
+                                    width="640"
+                                    height="480"
+                                />
+                            </div>
+                            
+                            {/* Info message when camera hidden */}
+                            {isTracking && settings.enableTracking && (
+                                <div style={{
+                                    background: '#e3f2fd',
+                                    border: '2px solid #2196f3',
+                                    padding: '20px',
+                                    borderRadius: '8px',
+                                    marginBottom: '16px',
+                                    textAlign: 'center'
+                                }}>
+                                    <p style={{ margin: 0, fontWeight: 'bold', color: '#1565c0', fontSize: '1.1rem' }}>
+                                        📷 Camera Display Hidden
+                                    </p>
+                                    <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#1976d2' }}>
+                                        Face tracking is still active in the background
+                                    </p>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {/* Info message when tracking is disabled */}

@@ -63,13 +63,14 @@ function App() {
     };
 
     const handleBackToTracker = () => {
-        console.log('◀️ Returning to tracker from settings');
-        setIsSessionPaused(wasPausedBeforeSettings);
+        console.log('◀️ Back to Session - resuming (like Resume button)');
+        // ALWAYS resume when going back to session
+        setIsSessionPaused(false);
         setCurrentScreen('tracker');
     };
 
     const handleUpdateSettings = (newSettings) => {
-        console.log('⚙️ Settings updated');
+        console.log('⚙️ Settings updated (live)');
         setSettings(newSettings);
     };
 
