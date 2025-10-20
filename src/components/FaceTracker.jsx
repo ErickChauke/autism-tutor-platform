@@ -14,7 +14,7 @@ export default function FaceTracker({
     sessionLength = 'standard', 
     settings,
     externalPause = false,
-    onPauseChange
+    onStop
 }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -62,24 +62,8 @@ export default function FaceTracker({
         }
     };
 
-    // CRITICAL FIX: Handle external pause WITHOUT creating loop
-    useEffect(() => {
-        // Only update if external pause is different from current state
-        if (externalPause !== isPaused) {
-            console.log(`⚙️ External pause change: ${externalPause}`);
-            setIsPaused(externalPause);
-        }
-    }, [externalPause]); // Remove isPaused from deps to break loop
-
-    useEffect(() => {
-        return () => {
-            console.log('🧹 FaceTracker unmounting - cleaning up camera...');
-            cleanupCamera();
-        };
-    }, []);
-
-    const handleStop = () => {
-        console.log('🛑 IMMEDIATE STOP - Cancelling everything...');
+    const cleanupEverything = () => {
+        console.log('🧹 Cleaning up everything...');
         
         if (eyeContactDebounceTimer.current) {
             clearTimeout(eyeContactDebounceTimer.current);
@@ -88,16 +72,46 @@ export default function FaceTracker({
         
         cleanupCamera();
         
-        setSessionKey(prev => prev + 1);
-        
         if (window.speechSynthesis) {
             window.speechSynthesis.cancel();
-            console.log('✅ Speech cancelled');
         }
         
         lipSyncController.stop();
-        console.log('✅ Lip sync stopped');
+    };
+
+    // Handle external pause from settings
+    useEffect(() => {
+        if (externalPause !== isPaused) {
+            console.log(`⚙️ External pause change: ${externalPause}`);
+            setIsPaused(externalPause);
+        }
+    }, [externalPause]);
+
+    // CRITICAL: Handle enableTracking setting changes
+    useEffect(() => {
+        if (isTracking && !settings.enableTracking) {
+            console.log('⚠️ Tracking disabled via settings - cleaning up camera');
+            cleanupCamera();
+        } else if (isTracking && settings.enableTracking && !cameraInstanceRef.current) {
+            console.log('✅ Tracking re-enabled via settings - restarting camera');
+            // Camera will restart via main tracking effect
+        }
+    }, [settings.enableTracking, isTracking]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            console.log('🧹 FaceTracker unmounting');
+            cleanupEverything();
+        };
+    }, []);
+
+    const handleStop = () => {
+        console.log('🛑 Stop button clicked');
         
+        cleanupEverything();
+        
+        setSessionKey(prev => prev + 1);
         setIsTracking(false);
         setIsPaused(false);
         setFaceDetected(false);
@@ -110,25 +124,20 @@ export default function FaceTracker({
         scoreAwarded.current = false;
         lastEyeContactValue.current = false;
         
-        console.log('✅ Session completely stopped');
+        if (onStop) {
+            console.log('📢 Notifying App to return to welcome');
+            onStop();
+        }
     };
 
     const handlePause = () => {
-        console.log('⏸️ PAUSE - Pausing session...');
+        console.log('⏸️ Pause button clicked');
         setIsPaused(true);
-        // Notify parent only when user clicks pause button
-        if (onPauseChange) {
-            onPauseChange(true);
-        }
     };
 
     const handleResume = () => {
-        console.log('▶️ RESUME - Resuming session...');
+        console.log('▶️ Resume button clicked');
         setIsPaused(false);
-        // Notify parent only when user clicks resume button
-        if (onPauseChange) {
-            onPauseChange(false);
-        }
     };
 
     useEffect(() => {
@@ -167,15 +176,14 @@ export default function FaceTracker({
         };
     }, [eyeContact, isTracking, mode]);
 
+    // Main tracking effect - only depends on isTracking and enableTracking
     useEffect(() => {
         if (!isTracking || !settings.enableTracking) {
-            console.log('⏸️ Tracking disabled or not started');
             return;
         }
 
         console.log('▶️ Starting face tracking...');
         setStartTime(Date.now());
-        let lastEyeContact = false;
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
@@ -218,8 +226,6 @@ export default function FaceTracker({
                 const eyeCenterX = (leftEye.x + rightEye.x) / 2;
                 currentEyeContact = Math.abs(eyeCenterX - nose.x) < 0.05;
                 
-                lastEyeContact = currentEyeContact;
-                
                 let color, size = 8;
                 
                 if (mode === 'assessment') {
@@ -241,8 +247,6 @@ export default function FaceTracker({
                     ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, size, 0, 2 * Math.PI);
                     ctx.fill();
                 });
-            } else {
-                lastEyeContact = false;
             }
             
             setFaceDetected(currentFaceDetected);
@@ -264,14 +268,14 @@ export default function FaceTracker({
             
             cameraInstanceRef.current = camera;
             camera.start();
-            console.log('✅ Camera started and stored in ref');
+            console.log('✅ Camera started');
         }
 
         return () => {
-            console.log('🧹 Face tracking effect cleanup');
+            console.log('🧹 Tracking effect cleanup');
             cleanupCamera();
         };
-    }, [isTracking, mode, settings.enableTracking]);
+    }, [isTracking, settings.enableTracking, mode]);
 
     const getDuration = () => {
         if (!startTime) return 0;
@@ -287,14 +291,41 @@ export default function FaceTracker({
             
             <div className="tracking-layout">
                 <div className="tracking-section">
-                    {settings.showCamera && (
-                        <>
-                            <h3>Camera</h3>
-                            <div className="video-container">
-                                <video ref={videoRef} style={{ display: 'none' }} />
-                                <canvas ref={canvasRef} />
-                            </div>
-                        </>
+                    {/* CRITICAL: Camera display - always keep elements in DOM */}
+                    {/* Just toggle visibility, not mounting/unmounting */}
+                    <div style={{ display: settings.showCamera ? 'block' : 'none' }}>
+                        <h3>Camera</h3>
+                        <div className="video-container">
+                            <video ref={videoRef} style={{ display: 'none' }} />
+                            <canvas ref={canvasRef} />
+                        </div>
+                    </div>
+
+                    {/* Hidden elements when camera display is off */}
+                    {!settings.showCamera && (
+                        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                            <video ref={videoRef} style={{ display: 'none' }} />
+                            <canvas ref={canvasRef} width="640" height="480" />
+                        </div>
+                    )}
+
+                    {/* Info message when tracking is disabled */}
+                    {isTracking && !settings.enableTracking && (
+                        <div style={{
+                            background: '#fff3cd',
+                            border: '2px solid #ff9800',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            marginBottom: '16px',
+                            textAlign: 'center'
+                        }}>
+                            <p style={{ margin: 0, fontWeight: 'bold', color: '#856404' }}>
+                                ⚠️ Face Tracking Disabled
+                            </p>
+                            <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#856404' }}>
+                                Enable "Face Tracking" in Settings to use detection features
+                            </p>
+                        </div>
                     )}
                     
                     <div className="controls">

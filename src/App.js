@@ -11,6 +11,7 @@ function App() {
     const [selectedMode, setSelectedMode] = useState('');
     const [selectedSession, setSelectedSession] = useState('');
     const [wasPausedBeforeSettings, setWasPausedBeforeSettings] = useState(false);
+    const [sessionActive, setSessionActive] = useState(false);
     
     const [settings, setSettings] = useState({
         showCamera: true,
@@ -26,23 +27,38 @@ function App() {
     const [isSessionPaused, setIsSessionPaused] = useState(false);
 
     const handleStart = (mode, session) => {
+        console.log('🎬 Starting new session');
         setSelectedMode(mode);
         setSelectedSession(session);
         setCurrentScreen('tracker');
         setIsSessionPaused(false);
+        setSessionActive(true);
+    };
+
+    const handleStop = () => {
+        console.log('🛑 Session stopped from App');
+        setSessionActive(false);
+        setIsSessionPaused(false);
+        setSelectedMode('');
+        setSelectedSession('');
+        setCurrentScreen('welcome');
     };
 
     const handleBackToWelcome = () => {
-        setCurrentScreen('welcome');
-        setSelectedMode('');
-        setSelectedSession('');
-        setIsSessionPaused(false);
+        console.log('◀️ Back to welcome (stopping session if active)');
+        if (sessionActive) {
+            handleStop();
+        } else {
+            setCurrentScreen('welcome');
+        }
     };
 
     const handleOpenSettings = () => {
         console.log('⚙️ Opening settings - auto-pausing session');
         setWasPausedBeforeSettings(isSessionPaused);
-        setIsSessionPaused(true);
+        if (sessionActive && !isSessionPaused) {
+            setIsSessionPaused(true);
+        }
         setCurrentScreen('settings');
     };
 
@@ -53,6 +69,7 @@ function App() {
     };
 
     const handleUpdateSettings = (newSettings) => {
+        console.log('⚙️ Settings updated');
         setSettings(newSettings);
     };
 
@@ -61,7 +78,7 @@ function App() {
             <Header 
                 showBackButton={currentScreen !== 'welcome'} 
                 onBackClick={currentScreen === 'settings' ? handleBackToTracker : handleBackToWelcome}
-                showSettingsButton={currentScreen === 'tracker'}
+                showSettingsButton={currentScreen === 'tracker' && sessionActive}
                 onSettingsClick={handleOpenSettings}
             />
             
@@ -69,14 +86,14 @@ function App() {
                 <WelcomeScreen onStart={handleStart} />
             )}
             
-            {(currentScreen === 'tracker' || currentScreen === 'settings') && selectedMode && (
+            {sessionActive && (
                 <div style={{ display: currentScreen === 'tracker' ? 'block' : 'none' }}>
                     <FaceTracker 
                         mode={selectedMode} 
                         sessionLength={selectedSession}
-                        onBack={handleBackToWelcome}
                         settings={settings}
                         externalPause={isSessionPaused}
+                        onStop={handleStop}
                     />
                 </div>
             )}
