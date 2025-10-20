@@ -9,9 +9,16 @@ import '../styles/FaceTracker.css';
 
 const EYE_CONTACT_DEBOUNCE = 1500;
 
-export default function FaceTracker({ mode, sessionLength = 'standard', settings }) {
+export default function FaceTracker({ 
+    mode, 
+    sessionLength = 'standard', 
+    settings,
+    externalPause = false,
+    onPauseChange
+}) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const cameraInstanceRef = useRef(null);
     
     const [isTracking, setIsTracking] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
@@ -42,6 +49,35 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
         research: 'Data collection'
     };
 
+    const cleanupCamera = () => {
+        if (cameraInstanceRef.current) {
+            console.log('📹 Stopping camera instance...');
+            try {
+                cameraInstanceRef.current.stop();
+                cameraInstanceRef.current = null;
+                console.log('✅ Camera stopped successfully');
+            } catch (error) {
+                console.error('❌ Error stopping camera:', error);
+            }
+        }
+    };
+
+    // CRITICAL FIX: Handle external pause WITHOUT creating loop
+    useEffect(() => {
+        // Only update if external pause is different from current state
+        if (externalPause !== isPaused) {
+            console.log(`⚙️ External pause change: ${externalPause}`);
+            setIsPaused(externalPause);
+        }
+    }, [externalPause]); // Remove isPaused from deps to break loop
+
+    useEffect(() => {
+        return () => {
+            console.log('🧹 FaceTracker unmounting - cleaning up camera...');
+            cleanupCamera();
+        };
+    }, []);
+
     const handleStop = () => {
         console.log('🛑 IMMEDIATE STOP - Cancelling everything...');
         
@@ -49,6 +85,8 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
             clearTimeout(eyeContactDebounceTimer.current);
             eyeContactDebounceTimer.current = null;
         }
+        
+        cleanupCamera();
         
         setSessionKey(prev => prev + 1);
         
@@ -78,11 +116,19 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
     const handlePause = () => {
         console.log('⏸️ PAUSE - Pausing session...');
         setIsPaused(true);
+        // Notify parent only when user clicks pause button
+        if (onPauseChange) {
+            onPauseChange(true);
+        }
     };
 
     const handleResume = () => {
         console.log('▶️ RESUME - Resuming session...');
         setIsPaused(false);
+        // Notify parent only when user clicks resume button
+        if (onPauseChange) {
+            onPauseChange(false);
+        }
     };
 
     useEffect(() => {
@@ -142,12 +188,13 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
             minTrackingConfidence: 0.5
         });
 
-        let cameraInstance = null;
-
         faceMesh.onResults((results) => {
             const canvas = canvasRef.current;
             const video = videoRef.current;
-            if (!canvas || !video) return;
+            
+            if (!canvas || !video) {
+                return;
+            }
 
             const ctx = canvas.getContext('2d');
             canvas.width = video.videoWidth;
@@ -182,7 +229,6 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
                     color = currentEyeContact ? '#FFD700' : '#4A90E2';
                     size = currentEyeContact ? 12 : 8;
                 } else if (mode === 'prompting') {
-                    // Prompting mode: Green = eye contact, Red = no eye contact
                     color = currentEyeContact ? '#00ff00' : '#ff0000';
                     size = currentEyeContact ? 10 : 8;
                 } else {
@@ -206,20 +252,24 @@ export default function FaceTracker({ mode, sessionLength = 'standard', settings
         });
 
         if (videoRef.current) {
-            cameraInstance = new Camera(videoRef.current, {
+            const camera = new Camera(videoRef.current, {
                 onFrame: async () => {
-                    await faceMesh.send({ image: videoRef.current });
+                    if (videoRef.current) {
+                        await faceMesh.send({ image: videoRef.current });
+                    }
                 },
                 width: 640,
                 height: 480
             });
-            cameraInstance.start();
+            
+            cameraInstanceRef.current = camera;
+            camera.start();
+            console.log('✅ Camera started and stored in ref');
         }
 
         return () => {
-            if (cameraInstance) {
-                cameraInstance.stop();
-            }
+            console.log('🧹 Face tracking effect cleanup');
+            cleanupCamera();
         };
     }, [isTracking, mode, settings.enableTracking]);
 
